@@ -136,7 +136,8 @@ namespace Bicep.Core.TypeSystem
 
                 if (declaredProperty.Flags.HasFlag(TypePropertyFlags.FallbackProperty))
                 {
-                    diagnostics.Write(DiagnosticBuilder.ForPosition(propertyExpressionPositionable).FallbackPropertyUsed(propertyName));
+                    // TODO implement the URL here
+                    diagnostics.Write(DiagnosticBuilder.ForPosition(propertyExpressionPositionable).FallbackPropertyUsed(propertyName, reportUrl: null));
                 }
 
                 // there is - return its type

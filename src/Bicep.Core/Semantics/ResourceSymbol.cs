@@ -34,7 +34,7 @@ namespace Bicep.Core.Semantics
 
         public ResourceType? TryGetResourceType() => ResourceType.TryUnwrap(this.Type);
 
-        public ResourceTypeReference? TryGetResourceTypeReference() => this.TryGetResourceType()?.TypeReference;
+        public ResourceTypeReference? TryGetResourceTypeReference() => DeclaringResource.TryGetResourceTypeReference();
 
         public ObjectType? TryGetBodyObjectType() => this.TryGetResourceType()?.Body.Type as ObjectType;
     }

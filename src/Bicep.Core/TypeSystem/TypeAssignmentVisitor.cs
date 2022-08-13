@@ -287,7 +287,7 @@ namespace Bicep.Core.TypeSystem
                     }
                 }
 
-                return TypeValidator.NarrowTypeAndCollectDiagnostics(typeManager, binder, diagnostics, syntax.Value, declaredType, true);
+                return TypeValidator.NarrowTypeAndCollectDiagnostics(typeManager, binder, diagnostics, syntax.Value, declaredType, syntax);
             });
 
         public override void VisitModuleDeclarationSyntax(ModuleDeclarationSyntax syntax)
@@ -531,7 +531,7 @@ namespace Bicep.Core.TypeSystem
                     else
                     {
                         // Collect diagnostics for the configuration type assignment.
-                        TypeValidator.NarrowTypeAndCollectDiagnostics(typeManager, binder, diagnostics, syntax.Config, namespaceType.ConfigurationType.Type, false);
+                        TypeValidator.NarrowTypeAndCollectDiagnostics(typeManager, binder, diagnostics, syntax.Config, namespaceType.ConfigurationType.Type);
                     }
                 }
                 else
@@ -963,10 +963,10 @@ namespace Bicep.Core.TypeSystem
                 }
 
                 baseType = UnwrapType(baseType);
-                return GetArrayItemType(syntax, diagnostics, baseType, indexType);
+                return GetArrayItemType(binder, syntax, diagnostics, baseType, indexType);
             });
 
-        private static ITypeReference GetArrayItemType(ArrayAccessSyntax syntax, IDiagnosticWriter diagnostics, TypeSymbol baseType, TypeSymbol indexType)
+        private static ITypeReference GetArrayItemType(IBinder binder, ArrayAccessSyntax syntax, IDiagnosticWriter diagnostics, TypeSymbol baseType, TypeSymbol indexType)
         {
             switch (baseType)
             {
@@ -1040,7 +1040,7 @@ namespace Bicep.Core.TypeSystem
                     {
                         // ensure we enumerate only once since some paths include a side effect that writes a diagnostic
                         var arrayItemTypes = unionType.Members
-                            .Select(baseMemberType => GetArrayItemType(syntax, diagnostics, baseMemberType.Type, indexType))
+                            .Select(baseMemberType => GetArrayItemType(binder, syntax, diagnostics, baseMemberType.Type, indexType))
                             .ToList();
 
                         if (arrayItemTypes.OfType<ErrorType>().Any())

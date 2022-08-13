@@ -23,6 +23,31 @@ namespace Bicep.Core.Diagnostics
     {
         public const string UseStringInterpolationInsteadClause = "Use string interpolation instead.";
 
+        public static Uri GetTypeInaccuracyUrl(ResourceTypeReference? typeReference, SyntaxBase? sourceSyntax)
+        {
+            const string baseUrl = "https://github.com/Azure/bicep-types-az/issues/new";
+            var queryStringData = new SortedDictionary<string, string> {
+                ["labels"] = "inaccuracy",
+                ["template"] = "types_inaccuracy.yml",
+            };
+
+            if (typeReference is not null)
+            {
+                queryStringData["title"] = $"[{typeReference.FormatName()}] {{description}}";
+                queryStringData["resourceType"] = typeReference.FormatType();
+                queryStringData["apiVersion"] = typeReference.ApiVersion ?? "";
+                queryStringData["issueType"] = "Other";
+            }
+
+            if (sourceSyntax is not null)
+            {
+                queryStringData["repro"] = $"```bicep\n{sourceSyntax.ToTextPreserveFormatting()}\n```";
+            }
+
+            var queryString = string.Join('&', queryStringData.Select(x => $"{x.Key}={Uri.EscapeDataString(x.Value)}"));
+            return new Uri($"{baseUrl}?{queryString}");
+        }
+
         public delegate ErrorDiagnostic ErrorBuilderDelegate(DiagnosticBuilderInternal builder);
 
         public delegate Diagnostic DiagnosticBuilderDelegate(DiagnosticBuilderInternal builder);
@@ -31,7 +56,6 @@ namespace Bicep.Core.Diagnostics
         {
 
             private const string TypeInaccuracyClause = " If this is an inaccuracy in the documentation, please report it to the Bicep Team.";
-            private static readonly Uri TypeInaccuracyLink = new("https://aka.ms/bicep-type-issues");
 
             public DiagnosticBuilderInternal(TextSpan textSpan)
             {
@@ -228,7 +252,7 @@ namespace Bicep.Core.Diagnostics
                 "BCP034",
                 $"The enclosing array expected an item of type \"{expectedType}\", but the provided item was of type \"{actualType}\".");
 
-            public Diagnostic MissingRequiredProperties(bool warnInsteadOfError, Symbol? sourceDeclaration, ObjectSyntax objectSyntax, ICollection<string> properties, string blockName, bool showTypeInaccuracy)
+            public Diagnostic MissingRequiredProperties(bool warnInsteadOfError, Symbol? sourceDeclaration, ObjectSyntax objectSyntax, ICollection<string> properties, string blockName, Uri? reportUrl)
             {
                 var sourceDeclarationClause = sourceDeclaration is not null
                     ? $" from source declaration \"{sourceDeclaration.Name}\""
@@ -244,13 +268,13 @@ namespace Bicep.Core.Diagnostics
                     TextSpan,
                     warnInsteadOfError ? DiagnosticLevel.Warning : DiagnosticLevel.Error,
                     "BCP035",
-                    $"The specified \"{blockName}\" declaration is missing the following required properties{sourceDeclarationClause}: {ToQuotedString(properties)}.{(showTypeInaccuracy ? TypeInaccuracyClause : string.Empty)}",
-                    showTypeInaccuracy ? TypeInaccuracyLink : null,
+                    $"The specified \"{blockName}\" declaration is missing the following required properties{sourceDeclarationClause}: {ToQuotedString(properties)}.{(reportUrl is not null ? TypeInaccuracyClause : string.Empty)}",
+                    reportUrl,
                     DiagnosticStyling.Default,
                     codeFix);
             }
 
-            public Diagnostic PropertyTypeMismatch(bool warnInsteadOfError, Symbol? sourceDeclaration, string property, TypeSymbol expectedType, TypeSymbol actualType, bool showTypeInaccuracy = false)
+            public Diagnostic PropertyTypeMismatch(bool warnInsteadOfError, Symbol? sourceDeclaration, string property, TypeSymbol expectedType, TypeSymbol actualType, Uri? reportUrl)
             {
                 var sourceDeclarationClause = sourceDeclaration is not null
                     ? $" in source declaration \"{sourceDeclaration.Name}\""
@@ -260,11 +284,11 @@ namespace Bicep.Core.Diagnostics
                     TextSpan,
                     warnInsteadOfError ? DiagnosticLevel.Warning : DiagnosticLevel.Error,
                     "BCP036",
-                    $"The property \"{property}\" expected a value of type \"{expectedType}\" but the provided value{sourceDeclarationClause} is of type \"{actualType}\".{(showTypeInaccuracy ? TypeInaccuracyClause : string.Empty)}",
-                    showTypeInaccuracy ? TypeInaccuracyLink : null);
+                    $"The property \"{property}\" expected a value of type \"{expectedType}\" but the provided value{sourceDeclarationClause} is of type \"{actualType}\".{(reportUrl is not null ? TypeInaccuracyClause : string.Empty)}",
+                    reportUrl);
             }
 
-            public Diagnostic DisallowedProperty(bool warnInsteadOfError, Symbol? sourceDeclaration, string property, TypeSymbol type, ICollection<string> validUnspecifiedProperties, bool showTypeInaccuracy)
+            public Diagnostic DisallowedProperty(bool warnInsteadOfError, Symbol? sourceDeclaration, string property, TypeSymbol type, ICollection<string> validUnspecifiedProperties, Uri? reportUrl)
             {
                 var permissiblePropertiesClause = validUnspecifiedProperties.Any()
                     ? $" Permissible properties include {ToQuotedString(validUnspecifiedProperties)}."
@@ -278,7 +302,7 @@ namespace Bicep.Core.Diagnostics
                     TextSpan,
                     warnInsteadOfError ? DiagnosticLevel.Warning : DiagnosticLevel.Error,
                     "BCP037",
-                    $"The property \"{property}\"{sourceDeclarationClause} is not allowed on objects of type \"{type}\".{permissiblePropertiesClause}{(showTypeInaccuracy ? TypeInaccuracyClause : string.Empty)}", showTypeInaccuracy ? TypeInaccuracyLink : null);
+                    $"The property \"{property}\"{sourceDeclarationClause} is not allowed on objects of type \"{type}\".{permissiblePropertiesClause}{(reportUrl is not null ? TypeInaccuracyClause : string.Empty)}", reportUrl);
             }
 
             public Diagnostic DisallowedInterpolatedKeyProperty(bool warnInsteadOfError, Symbol? sourceDeclaration, TypeSymbol type, ICollection<string> validUnspecifiedProperties)
@@ -491,11 +515,11 @@ namespace Bicep.Core.Diagnostics
                 "BCP072",
                 "This symbol cannot be referenced here. Only other parameters can be referenced in parameter default values.");
 
-            public Diagnostic CannotAssignToReadOnlyProperty(bool warnInsteadOfError, string property, bool showTypeInaccuracy) => new(
+            public Diagnostic CannotAssignToReadOnlyProperty(bool warnInsteadOfError, string property, Uri? reportUrl) => new(
                 TextSpan,
                 warnInsteadOfError ? DiagnosticLevel.Warning : DiagnosticLevel.Error,
                 "BCP073",
-                $"The property \"{property}\" is read-only. Expressions cannot be assigned to read-only properties.{(showTypeInaccuracy ? TypeInaccuracyClause : string.Empty)}", showTypeInaccuracy ? TypeInaccuracyLink : null);
+                $"The property \"{property}\" is read-only. Expressions cannot be assigned to read-only properties.{(reportUrl is not null ? TypeInaccuracyClause : string.Empty)}", reportUrl);
 
             public ErrorDiagnostic ArraysRequireIntegerIndex(TypeSymbol wrongType) => new(
                 TextSpan,
@@ -1115,11 +1139,11 @@ namespace Bicep.Core.Diagnostics
                "BCP186",
                $"Unable to parse literal JSON value. Please ensure that it is well-formed.");
 
-            public Diagnostic FallbackPropertyUsed(string property) => new(
+            public Diagnostic FallbackPropertyUsed(string property, Uri? reportUrl) => new(
                 TextSpan,
                 DiagnosticLevel.Warning,
                 "BCP187",
-                $"The property \"{property}\" does not exist in the resource definition, although it might still be valid.{TypeInaccuracyClause}", TypeInaccuracyLink);
+                $"The property \"{property}\" does not exist in the resource definition, although it might still be valid.{(reportUrl is not null ? TypeInaccuracyClause : string.Empty)}", reportUrl);
 
             public ErrorDiagnostic ReferencedArmTemplateHasErrors() => new(
                 TextSpan,
