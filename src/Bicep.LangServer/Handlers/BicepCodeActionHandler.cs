@@ -217,6 +217,23 @@ namespace Bicep.LanguageServer.Handlers
 
         private static CommandOrCodeAction CreateCodeFix(DocumentUri uri, CompilationContext context, CodeFix fix)
         {
+            if (fix.Description == "Add required properties" &&
+                context.Compilation.GetEntrypointSemanticModel().DeclaredResources.FirstOrDefault() is {} resource)
+            {
+                var url = DiagnosticBuilder.GetTypeInaccuracyUrl(resource.TypeReference, resource.Symbol.DeclaringSyntax);
+                return new CodeAction
+                {
+                    Kind = CodeActionKind.Empty,
+                    Title = "Report a GitHub issue",
+                    IsPreferred = true,
+                    Command = new()
+                    {
+                        Name = "vscode.open",
+                        Arguments = new JArray { url.ToString() },
+                    }
+                };
+            }
+
             var codeActionKind = fix.Kind switch
             {
                 CodeFixKind.QuickFix => CodeActionKind.QuickFix,
