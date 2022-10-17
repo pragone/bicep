@@ -18,7 +18,7 @@ namespace Bicep.Core.Workspaces
         public bool TryGetSourceFile(Uri fileUri, [NotNullWhen(true)] out ISourceFile? file)
             => activeFiles.TryGetValue(fileUri, out file);
 
-        public IEnumerable<ISourceFile> GetSourceFilesForDirectory(Uri fileUri)
+        public IEnumerable<ISourceFile> GetSourceFilesForDirectory(Uri fileUri) //asdfg bug add "/"
             => activeFiles
                 .Where(kvp => fileUri.IsBaseOf(kvp.Key))
                 .Select(kvp => kvp.Value);

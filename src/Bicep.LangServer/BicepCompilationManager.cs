@@ -37,9 +37,9 @@ namespace Bicep.LanguageServer
         private readonly IWorkspace workspace;
         private readonly ILanguageServerFacade server;
         private readonly ICompilationProvider provider;
-        private readonly IFileResolver fileResolver;
+        private readonly IFileResolver fileResolver; // asdfg remove
         private readonly IModuleRestoreScheduler scheduler;
-        private readonly IConfigurationManager configurationManager;
+        private readonly IConfigurationManager configurationManager; // asdfg remove
         private readonly ITelemetryProvider TelemetryProvider;
         private readonly ILinterRulesProvider LinterRulesProvider;
         private readonly IBicepAnalyzer bicepAnalyzer;
@@ -154,7 +154,7 @@ namespace Bicep.LanguageServer
                 {
                     // If we don't know definitively that we're deleting a file, we have to assume it's a directory; the file system watcher does not give us any information to differentiate reliably.
                     // We could possibly assume that if the path ends in '.bicep', we've got a file, but this would discount directories ending in '.bicep', however unlikely.
-                    var subdirRemovedFiles = workspace.GetSourceFilesForDirectory(change.Uri.ToUri());
+                    var subdirRemovedFiles = workspace.GetSourceFilesForDirectory(change.Uri.ToUri()); //asdfg?
                     removedFiles.UnionWith(subdirRemovedFiles);
                 }
             }
@@ -208,7 +208,7 @@ namespace Bicep.LanguageServer
             return closedFiles.ToImmutableArray();
         }
 
-        private (ImmutableArray<ISourceFile> added, ImmutableArray<ISourceFile> removed) UpdateCompilationInternal(DocumentUri documentUri, int? version, IDictionary<ISourceFile, ISemanticModel> modelLookup, IEnumerable<ISourceFile> removedFiles, bool triggeredByFileOpenEvent = false)
+        private (ImmutableArray<ISourceFile> added, ImmutableArray<ISourceFile> removed) UpdateCompilationInternal(DocumentUri documentUri, int? version, IDictionary<ISourceFile, ISemanticModel> modelLookup, IEnumerable<ISourceFile> removedFiles, bool triggeredByFileOpenEvent = false) //asdfg version only used for diagnostics
         {
             try
             {
