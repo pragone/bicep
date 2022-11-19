@@ -9,6 +9,10 @@ import { aiKey } from '../package.json';
 import './index.css';
 import { initializeInterop } from './lspInterop';
 import { Playground } from './playground';
+import * as monaco from "monaco-editor";
+import { loader } from "@monaco-editor/react";
+
+loader.config({ monaco });
 
 const insights = new ApplicationInsights({
   config: {
