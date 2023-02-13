@@ -110,4 +110,76 @@ describe("withProgressAfterDelay", () => {
 
     expect(withProgressMock).toHaveBeenCalledTimes(1);
   });
+
+  it("should not show multiple notifications at once", async () => {
+    const withProgressMock = createWithProgressMock<number>();
+
+    let semaphore1 = false;
+    let semaphore2 = false;
+
+    const func1 =  async () =>
+      withProgressAfterDelay<number>(
+        {
+          location: ProgressLocation.Notification,
+          delayBeforeShowingMs: 1,
+          inject: { withProgress: withProgressMock },
+        },
+        async () => {
+          expect(withProgressMock).toHaveBeenCalledTimes(0);
+
+          while (!semaphore1) {
+            await sleep(1);
+          }
+
+          return 1;
+        }
+      );
+
+    const func2 = async () =>
+      withProgressAfterDelay(
+        {
+          location: ProgressLocation.Notification,
+          delayBeforeShowingMs: 1,
+          inject: { withProgress: withProgressMock },
+        },
+        async () => {
+          expect(withProgressMock).toHaveBeenCalledTimes(0);
+
+          while (!semaphore2) {
+            await sleep(1);
+          }
+
+          return 2;
+        }
+      );
+
+    expect(withProgressMock).toHaveBeenCalledTimes(0);
+
+    let result1: number|undefined;
+    let result2: number|undefined;
+
+    // Start up the functions (don't wait)
+    (async () => {
+      result1 = await func1();
+    })();
+    (async () => {
+      result2 = await func2();
+    })();
+
+    // Wait long enough for progress to show
+    await sleep(10);
+    expect(withProgressMock).toHaveBeenCalledTimes(1);
+
+    // Signal tasks to be done
+    semaphore1 = true;
+    semaphore2 = true;
+
+    // Give them a chance to finish
+    await sleep(2);
+
+    expect(result1).toBe(1);
+    expect(result2).toBe(2);
+
+    expect(withProgressMock).toHaveBeenCalledTimes(1);
+  });
 });
