@@ -7,9 +7,7 @@ export class DynamicListOfPromises {
   private promises: Promise<unknown>[] = [];
 
   private isComplete = false;
-  private combinedPromise = new Promise<void>((resolve) => {
-    DynamicListOfPromises.waitForNextPromise(this.promises, resolve);
-  });
+  private combinedPromise?: Promise<void>;
 
   public add(p: Promise<unknown>): void {
     if (this.isComplete) {
@@ -25,7 +23,21 @@ export class DynamicListOfPromises {
       return new Promise((resolve) => resolve());
     }
 
+    if (!this.combinedPromise) {
+      this.combinedPromise = this.createNewPromise();
+    }
+
     return this.combinedPromise;
+  }
+
+  private createNewPromise(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      DynamicListOfPromises.waitForNextPromise(this.promises, () => {
+        assert(this.combinedPromise);
+        this.combinedPromise = undefined;
+        resolve();
+      });
+    });
   }
 
   private static waitForNextPromise(
@@ -34,11 +46,14 @@ export class DynamicListOfPromises {
     previousPromiseToRemove?: Promise<unknown>
   ): void {
     if (previousPromiseToRemove) {
+      // Remove the promise that just resolved. Can't remove it earlier because we
+      //   don't want the count of promises to be 0 while we're waiting for an active promise
       assert(promises[0] === previousPromiseToRemove);
+      promises.shift();
     }
 
     if (promises.length === 0) {
-      return;
+      resolve();
     } else {
       // On resolve or reject, remove the promise from the list and wait for the next one
       const currentPromise = promises[0];
