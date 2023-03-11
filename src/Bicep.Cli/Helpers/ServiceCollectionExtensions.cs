@@ -13,6 +13,7 @@ using Bicep.Core.Registry;
 using Bicep.Core.Registry.Auth;
 using Bicep.Core.Semantics.Namespaces;
 using Bicep.Core.TypeSystem.Az;
+using Bicep.Core.TypeSystem.K8s;
 using Bicep.Decompiler;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -55,6 +56,9 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddBicepCore(this IServiceCollection services) => services
         .AddSingleton<INamespaceProvider, DefaultNamespaceProvider>()
         .AddSingleton<IAzResourceTypeLoader, AzResourceTypeLoader>()
+        .AddSingleton<AzResourceTypeProvider>()
+        .AddSingleton<K8sResourceTypeLoader>()
+        .AddSingleton<K8sResourceTypeProvider>()
         .AddSingleton<IContainerRegistryClientFactory, ContainerRegistryClientFactory>()
         .AddSingleton<ITemplateSpecRepositoryFactory, TemplateSpecRepositoryFactory>()
         .AddSingleton<IModuleDispatcher, ModuleDispatcher>()

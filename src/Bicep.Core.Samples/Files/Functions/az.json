@@ -6,7 +6,7 @@
     "minimumArgumentCount": 0,
     "maximumArgumentCount": 0,
     "flags": "default",
-    "typeSignature": "(): deployment",
+    "typeSignature": "(): object",
     "parameterTypeSignatures": []
   },
   {

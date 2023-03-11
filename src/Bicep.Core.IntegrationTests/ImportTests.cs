@@ -33,9 +33,8 @@ namespace Bicep.Core.IntegrationTests
                 this.builderDict = builderDict.ToImmutableDictionary();
             }
 
-            public static bool AllowImportStatements => true;
-
-            public IEnumerable<string> AvailableNamespaces => builderDict.Keys.Concat(new [] { SystemNamespaceType.BuiltInName });
+            ImmutableArray<NamespaceSettings> INamespaceProvider.AvailableNamespaces
+                => new [] { SystemNamespaceType.Settings }.ToImmutableArray();
 
             public NamespaceType? TryGetNamespace(string providerName, string aliasName, ResourceScope resourceScope, IFeatureProvider features) => providerName switch
             {

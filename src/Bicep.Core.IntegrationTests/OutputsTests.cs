@@ -23,7 +23,7 @@ namespace Bicep.Core.IntegrationTests
 
         private ServiceBuilder ServicesWithExtensibility => new ServiceBuilder()
             .WithFeatureOverrides(new(TestContext, ExtensibilityEnabled: true, ResourceTypedParamsAndOutputsEnabled: true))
-            .WithNamespaceProvider(new TestExtensibilityNamespaceProvider(BicepTestConstants.AzResourceTypeLoader));
+            .WithNamespaceProvider(new TestExtensibilityNamespaceProvider());
 
         [TestMethod]
         public void Output_can_have_inferred_resource_type()

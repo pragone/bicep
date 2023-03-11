@@ -850,7 +850,7 @@
     "kind": "function",
     "documentation": {
       "kind": "markdown",
-      "value": "```bicep\ndeployment(): deployment\n\n```\nReturns information about the current deployment operation.\n"
+      "value": "```bicep\ndeployment(): object\n\n```\nReturns information about the current deployment operation.\n"
     },
     "deprecated": false,
     "preselect": false,
