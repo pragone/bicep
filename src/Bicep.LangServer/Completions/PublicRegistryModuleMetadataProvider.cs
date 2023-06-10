@@ -7,11 +7,15 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
+using System.Text.Unicode;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using Microsoft;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
@@ -35,13 +39,26 @@ namespace Bicep.LanguageServer.Providers
         private object queryingLiveSyncObject = new();
         private DateTime? lastSuccessfulQuery;
         private int consecutiveFailures = 0;
+        private Func<Task<Stream>> getLiveDataStream;
 
-        public PublicRegistryModuleMetadataProvider(bool initializeCache = false/*asdfg*/)
+        public PublicRegistryModuleMetadataProvider(Func<Task<Stream>>? getLiveDataStream = null, bool initializeCache = false/*asdfg*/)
         {
+            getLiveDataStream ??= async () =>
+            {
+                using var httpClient = new HttpClient();
+                return await httpClient.GetStreamAsync(LiveDataEndpoint);
+            };
+            this.getLiveDataStream = getLiveDataStream;
+
             if (initializeCache)
             {
                 this.CheckUpdateCacheAsync(true);
             }
+        }
+
+        public PublicRegistryModuleMetadataProvider(string testData, bool initializeCache = false)
+            : this(() => Task.FromResult<Stream>(new MemoryStream(UTF8Encoding.UTF8.GetBytes(testData))), initializeCache)
+        {
         }
 
         private void CheckUpdateCacheAsync(bool initialDelay = false)
@@ -116,8 +133,7 @@ namespace Bicep.LanguageServer.Providers
 
             try
             {
-                using var httpClient = new HttpClient();
-                using var metadataStream = await httpClient.GetStreamAsync(LiveDataEndpoint);
+                var metadataStream = await this.getLiveDataStream();
                 var metadata = JsonSerializer.Deserialize<ModuleMetadata[]>(metadataStream);
 
                 if (metadata is not null)
