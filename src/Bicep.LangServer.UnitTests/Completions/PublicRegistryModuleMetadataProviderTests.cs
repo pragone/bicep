@@ -36,7 +36,7 @@ namespace Bicep.LangServer.UnitTests.Completions
     {
         private const string ModuleIndex = @"[
   {
-    ""moduleName"": ""app/dapr-containerapp"",
+    ""moduleName"": ""app/dapr-containerapp"", 
     ""tags"": [
       ""1.0.1"",
       ""1.0.2""
@@ -377,7 +377,7 @@ namespace Bicep.LangServer.UnitTests.Completions
         [TestMethod]
         public async Task asdfg()
         {
-            PublicRegistryModuleMetadataProvider provider = new(ModuleIndex);
+            PublicRegistryModuleMetadataProvider provider = new(ModuleIndex, true);
             var names = await provider.GetModuleNames();
             names.Should().HaveCount(1);
         }
