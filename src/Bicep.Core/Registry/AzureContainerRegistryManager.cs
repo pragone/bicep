@@ -134,6 +134,7 @@ namespace Bicep.Core.Registry
 
                 //asdfg??????  var configasdfg = new StreamDescriptor(Stream.Null, BicepMediaTypes.BicepModuleSourcesArtifactType/*asdfg?  mediatype of config same as artifact type of manifest?*/, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
                 //var configasdfg = new StreamDescriptor(Stream.Null, "application/vnd.oci.image.manifest.v1+json"/*asdfg?  mediatype of config same as artifact type of manifest?*/);//, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
+                // NOTE: Azure Container Registries won't recognize this as a valid attachment with this being valid JSON, so write out an empty object
                 using var innerConfigStream = new MemoryStream(new byte[] { (byte)'{', (byte)'}' });
                 var configasdfg = new StreamDescriptor(innerConfigStream, "hello/example"/*asdfg?  mediatype of config same as artifact type of manifest?*/);//, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
                 var configasdfgDescriptor = DescriptorFactory.CreateDescriptor(algorithmIdentifier, configasdfg);
