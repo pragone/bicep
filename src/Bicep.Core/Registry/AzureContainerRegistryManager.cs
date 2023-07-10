@@ -132,7 +132,6 @@ namespace Bicep.Core.Registry
                 // asdfg do we remove current attachments?
 
                 //var config = new StreamDescriptor(Stream.Null, BicepMediaTypes.BicepModuleConfigV1); //asdfg
-                var layer = new StreamDescriptor(bicepSources, "application/vnd.oci.image.layer.v1.tar");//, BicepMediaTypes.BicepModuleLayerV1Json);
 
                 //asdfg??????  var configasdfg = new StreamDescriptor(Stream.Null, BicepMediaTypes.BicepModuleSourcesArtifactType/*asdfg?  mediatype of config same as artifact type of manifest?*/, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
                 //var configasdfg = new StreamDescriptor(Stream.Null, "application/vnd.oci.image.manifest.v1+json"/*asdfg?  mediatype of config same as artifact type of manifest?*/);//, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
@@ -147,6 +146,7 @@ namespace Bicep.Core.Registry
 
 
 
+                //var layer = new StreamDescriptor(bicepSources, "application/vnd.oci.image.layer.v1.tar");//, BicepMediaTypes.BicepModuleLayerV1Json);
                 //var layerasdfg = new StreamDescriptor(bicepSources, "hello/example");// "application/vnd.oci.image.manifest.v1+json"); //asdfg? BicepMediaTypes.BicepModuleSourcesV1Layer/*asdfg?*/);//asdfg, new Dictionary<string, string> { { "asdfg-title", "sourcesasdfg.zip" } });
                 //var layerasdfg = new StreamDescriptor(bicepSources, "hello/example");//, new Dictionary<string, string> { { "asdfg-title", "a.txt" } });
                 var layerasdfg = new StreamDescriptor(bicepSources, BicepMediaTypes.BicepModuleSourcesV1Layer, new Dictionary<string, string> { { "org.opencontainers.image.title", $"Sources for {moduleReference.FullyQualifiedReference}"/*asdfg*/ } });

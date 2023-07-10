@@ -73,8 +73,7 @@ namespace Bicep.Cli.Commands
             compilationWriter.ToStream(compilation, compiledArmTemplateStream);
             compiledArmTemplateStream.Position = 0;
 
-            //var sourcesStream = new MemoryStream(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }); //asdfg
-            var sourcesStream = new MemoryStream(new byte[] { 65 }); //asdfg
+            var sourcesStream = new MemoryStream(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }); //asdfg
 
             compiledArmTemplateStream.Position = 0;
             await this.PublishModuleAsync(moduleReference, compiledArmTemplateStream, sourcesStream, documentationUri, overwriteIfExists);
