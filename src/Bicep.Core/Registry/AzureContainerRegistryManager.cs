@@ -129,7 +129,7 @@ namespace Bicep.Core.Registry
 
             if (bicepSources is not null)
             {
-                // asdfg do we remove current attachments?
+                // asdfg do we remove current attachments?   I think yes.  If only the sources change, the old one will remain
 
                 //var config = new StreamDescriptor(Stream.Null, BicepMediaTypes.BicepModuleConfigV1); //asdfg
 
