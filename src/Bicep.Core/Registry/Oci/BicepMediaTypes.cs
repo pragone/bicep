@@ -9,7 +9,7 @@ namespace Bicep.Core.Registry.Oci
         public const string BicepModuleConfigV1 = "application/vnd.ms.bicep.module.config.v1+json";
         public const string BicepModuleLayerV1Json = "application/vnd.ms.bicep.module.layer.v1+json";
 
-        //public const string BicepModuleSourcesArtifactType = "application/vnd.ms.bicep.module.sources"; //asdfg
-        //public const string BicepModuleSourcesV1Layer = "application/vnd.ms.bicep.module.sources.v1+tar"; //asdfg tar?
+        public const string BicepModuleSourcesArtifactType = "application/vnd.ms.bicep.module.sources";
+        public const string BicepModuleSourcesV1Layer = "application/vnd.ms.bicep.module.sources.v1+tar"; //asdfg tar?
     }
 }

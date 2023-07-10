@@ -129,6 +129,8 @@ namespace Bicep.Core.Registry
 
             if (bicepSources is not null)
             {
+                // asdfg do we remove current attachments?
+
                 //var config = new StreamDescriptor(Stream.Null, BicepMediaTypes.BicepModuleConfigV1); //asdfg
                 var layer = new StreamDescriptor(bicepSources, "application/vnd.oci.image.layer.v1.tar");//, BicepMediaTypes.BicepModuleLayerV1Json);
 
@@ -147,7 +149,7 @@ namespace Bicep.Core.Registry
 
                 //var layerasdfg = new StreamDescriptor(bicepSources, "hello/example");// "application/vnd.oci.image.manifest.v1+json"); //asdfg? BicepMediaTypes.BicepModuleSourcesV1Layer/*asdfg?*/);//asdfg, new Dictionary<string, string> { { "asdfg-title", "sourcesasdfg.zip" } });
                 //var layerasdfg = new StreamDescriptor(bicepSources, "hello/example");//, new Dictionary<string, string> { { "asdfg-title", "a.txt" } });
-                var layerasdfg = new StreamDescriptor(bicepSources, "application/vnd.oci.image.layer.v1.tar", new Dictionary<string, string> { { "org.opencontainers.image.title", "a.txt" } });
+                var layerasdfg = new StreamDescriptor(bicepSources, BicepMediaTypes.BicepModuleSourcesV1Layer, new Dictionary<string, string> { { "org.opencontainers.image.title", $"Sources for {moduleReference.FullyQualifiedReference}"/*asdfg*/ } });
                 layerasdfg.ResetStream();
                 var layerasdfgDescriptor = DescriptorFactory.CreateDescriptor(algorithmIdentifier, layerasdfg);
 
@@ -156,11 +158,11 @@ namespace Bicep.Core.Registry
 
                 var manifestasdfg = new OciManifest(
                     2,
-                    "application/vnd.oci.image.manifest.v1+json",
-                    null, //"application/vnd.oci.image.manifest.v1+json", //asdfg BicepMediaTypes.BicepModuleSourcesArtifactType/*asdfg?*/,
+                    null,
+                    BicepMediaTypes.BicepModuleSourcesArtifactType,
                     configasdfgDescriptor,
                     new List<OciDescriptor> { layerasdfgDescriptor },
-                    subject: manifestDescriptor
+                    subject: manifestDescriptor // This is the reference back to the main manifest that links the source manifest to it
                     //asdfg new Dictionary<string, string> { { "asdfg3", "asfg3 value" } });
                     );
 
