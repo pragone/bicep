@@ -17,7 +17,7 @@ namespace Bicep.Core.Registry.Oci
         {
             var digest = ComputeDigest(algorithmIdentifier, streamDescriptor.Stream);
 
-            return new OciDescriptor(streamDescriptor.MediaType, digest, streamDescriptor.Stream.Length, streamDescriptor.Annotations);
+            return new OciDescriptor(streamDescriptor.MediaType, digest, streamDescriptor.Stream.Length, null); //asdfg
         }
 
         public static string ComputeDigest(string algorithmIdentifier, Stream stream)

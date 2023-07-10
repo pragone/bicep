@@ -56,7 +56,7 @@ namespace Bicep.Cli.Commands
             {
                 // Publishing an ARM template file.
                 using var armTemplateStream = this.fileSystem.FileStream.New(inputPath, FileMode.Open, FileAccess.Read);
-                await this.PublishModuleAsync(moduleReference, armTemplateStream, documentationUri, overwriteIfExists);
+                await this.PublishModuleAsync(moduleReference, armTemplateStream, null/*asdfg?*/, documentationUri, overwriteIfExists);
 
                 return 0;
             }
@@ -69,16 +69,20 @@ namespace Bicep.Cli.Commands
                 return 1;
             }
 
-            var stream = new MemoryStream();
-            compilationWriter.ToStream(compilation, stream);
+            var compiledArmTemplateStream = new MemoryStream(); //asdfg
+            compilationWriter.ToStream(compilation, compiledArmTemplateStream);
+            compiledArmTemplateStream.Position = 0;
 
-            stream.Position = 0;
-            await this.PublishModuleAsync(moduleReference, stream, documentationUri, overwriteIfExists);
+            //var sourcesStream = new MemoryStream(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }); //asdfg
+            var sourcesStream = new MemoryStream(new byte[] { 65 }); //asdfg
+
+            compiledArmTemplateStream.Position = 0;
+            await this.PublishModuleAsync(moduleReference, compiledArmTemplateStream, sourcesStream, documentationUri, overwriteIfExists);
 
             return 0;
         }
 
-        private async Task PublishModuleAsync(ModuleReference target, Stream stream, string? documentationUri, bool overwriteIfExists)
+        private async Task PublishModuleAsync(ModuleReference target, Stream compiledArmTemplate, Stream? bicepSources, string? documentationUri, bool overwriteIfExists)
         {
             try
             {
@@ -87,7 +91,7 @@ namespace Bicep.Cli.Commands
                 {
                     throw new BicepException($"The module \"{target.FullyQualifiedReference}\" already exists in registry. Use --force to overwrite the existing module.");
                 }
-                await this.moduleDispatcher.PublishModule(target, stream, documentationUri);
+                await this.moduleDispatcher.PublishModule(target, compiledArmTemplate, bicepSources, documentationUri);
             }
             catch (ExternalModuleException exception)
             {

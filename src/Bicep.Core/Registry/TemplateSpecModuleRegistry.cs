@@ -58,7 +58,7 @@ namespace Bicep.Core.Registry
         public override bool IsModuleRestoreRequired(TemplateSpecModuleReference reference) =>
             !this.FileResolver.FileExists(this.GetModuleEntryPointUri(reference));
 
-        public override Task PublishModule(TemplateSpecModuleReference reference, Stream compiled, string? documentationUri, string? description) => throw new NotSupportedException("Template Spec modules cannot be published.");
+        public override Task PublishModule(TemplateSpecModuleReference reference, Stream compiled, Stream? bicepSources, string? documentationUri, string? description) => throw new NotSupportedException("Template Spec modules cannot be published.");
 
         public override Task<bool> CheckModuleExists(TemplateSpecModuleReference reference) => throw new NotSupportedException("Template Spec modules cannot be published.");
 

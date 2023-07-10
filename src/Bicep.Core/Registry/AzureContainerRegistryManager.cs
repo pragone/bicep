@@ -71,7 +71,13 @@ namespace Bicep.Core.Registry
             return new OciArtifactResult(manifestDigest, manifest, manifestStream, moduleStream);
         }
 
-        public async Task PushArtifactAsync(RootConfiguration configuration, OciArtifactModuleReference moduleReference, string? artifactType, StreamDescriptor config, string? documentationUri = null, string? description = null, params StreamDescriptor[] layers)
+//asdfg https://learn.microsoft.com/en-us/dotnet/api/overview/azure/containers.containerregistry-readme?view=azure-dotnet#upload-images
+//asdfg https://learn.microsoft.com/en-us/azure/container-registry/container-registry-image-formats#oci-artifacts
+// asdfg Azure Container Registry supports the OCI Distribution Specification, a vendor-neutral, cloud-agnostic spec to store, share, secure, and deploy container images and other content types (artifacts). The specification allows a registry to store a wide range of artifacts in addition to container images. You use tooling appropriate to the artifact to push and pull artifacts. For examples, see:
+//asdfg https://github.com/oras-project/artifacts-spec/blob/main/scenarios.md
+
+
+        public async Task PushArtifactAsync(RootConfiguration configuration, OciArtifactModuleReference moduleReference, string? artifactType, StreamDescriptor config, Stream? bicepSources/*asdfg dono't pass this in*/, string? documentationUri = null, string? description = null, params StreamDescriptor[] layers)
         {
             // TODO: How do we choose this? Does it ever change?
             var algorithmIdentifier = DescriptorFactory.AlgorithmIdentifierSha256;
@@ -83,7 +89,7 @@ namespace Bicep.Core.Registry
             var configDescriptor = DescriptorFactory.CreateDescriptor(algorithmIdentifier, config);
 
             config.ResetStream();
-            _ = await blobClient.UploadBlobAsync(config.Stream);
+            var result1 = await blobClient.UploadBlobAsync(config.Stream);
 
             var layerDescriptors = new List<OciDescriptor>(layers.Length);
             foreach (var layer in layers)
@@ -93,7 +99,7 @@ namespace Bicep.Core.Registry
                 layerDescriptors.Add(layerDescriptor);
 
                 layer.ResetStream();
-                _ = await blobClient.UploadBlobAsync(layer.Stream);
+                var result2 = await blobClient.UploadBlobAsync(layer.Stream);
             }
 
             var annotations = new Dictionary<string, string>();
@@ -108,7 +114,7 @@ namespace Bicep.Core.Registry
                 annotations[LanguageConstants.OciOpenContainerImageDescriptionAnnotation] = description;
             }
 
-            var manifest = new OciManifest(2, artifactType, configDescriptor, layerDescriptors, annotations);
+            var manifest = new OciManifest(2, null, artifactType, configDescriptor, layerDescriptors, null);
 
             using var manifestStream = new MemoryStream();
             OciSerialization.Serialize(manifestStream, manifest);
@@ -116,6 +122,54 @@ namespace Bicep.Core.Registry
             manifestStream.Position = 0;
             var manifestBinaryData = await BinaryData.FromStreamAsync(manifestStream);
             var manifestUploadResult = await blobClient.SetManifestAsync(manifestBinaryData, moduleReference.Tag, mediaType: ManifestMediaType.OciImageManifest);
+
+            manifestStream.Position = 0;
+            var manifestStreamDescriptor = new StreamDescriptor(manifestStream, ManifestMediaType.OciImageManifest.ToString()/*asdfg*/); //asdfg
+            var manifestDescriptor = DescriptorFactory.CreateDescriptor(algorithmIdentifier, manifestStreamDescriptor);
+
+            if (bicepSources is not null)
+            {
+                //var config = new StreamDescriptor(Stream.Null, BicepMediaTypes.BicepModuleConfigV1); //asdfg
+                var layer = new StreamDescriptor(bicepSources, "application/vnd.oci.image.layer.v1.tar");//, BicepMediaTypes.BicepModuleLayerV1Json);
+
+                //asdfg??????  var configasdfg = new StreamDescriptor(Stream.Null, BicepMediaTypes.BicepModuleSourcesArtifactType/*asdfg?  mediatype of config same as artifact type of manifest?*/, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
+                //var configasdfg = new StreamDescriptor(Stream.Null, "application/vnd.oci.image.manifest.v1+json"/*asdfg?  mediatype of config same as artifact type of manifest?*/);//, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
+                using var innerConfigStream = new MemoryStream(new byte[] { (byte)'{', (byte)'}' });
+                var configasdfg = new StreamDescriptor(innerConfigStream, "hello/example"/*asdfg?  mediatype of config same as artifact type of manifest?*/);//, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
+                var configasdfgDescriptor = DescriptorFactory.CreateDescriptor(algorithmIdentifier, configasdfg);
+
+                // Upload config blob     asdfg can this be skipped?
+                configasdfg.ResetStream();
+                var asdfgresponse1 = await blobClient.UploadBlobAsync(configasdfg.Stream); // asdfg should get digest from result
+
+
+
+                //var layerasdfg = new StreamDescriptor(bicepSources, "hello/example");// "application/vnd.oci.image.manifest.v1+json"); //asdfg? BicepMediaTypes.BicepModuleSourcesV1Layer/*asdfg?*/);//asdfg, new Dictionary<string, string> { { "asdfg-title", "sourcesasdfg.zip" } });
+                //var layerasdfg = new StreamDescriptor(bicepSources, "hello/example");//, new Dictionary<string, string> { { "asdfg-title", "a.txt" } });
+                var layerasdfg = new StreamDescriptor(bicepSources, "application/vnd.oci.image.layer.v1.tar", new Dictionary<string, string> { { "org.opencontainers.image.title", "a.txt" } });
+                layerasdfg.ResetStream();
+                var layerasdfgDescriptor = DescriptorFactory.CreateDescriptor(algorithmIdentifier, layerasdfg);
+
+                layerasdfg.ResetStream();
+                var asdfgresponse2 = await blobClient.UploadBlobAsync(layerasdfg.Stream);
+
+                var manifestasdfg = new OciManifest(
+                    2,
+                    "application/vnd.oci.image.manifest.v1+json",
+                    null, //"application/vnd.oci.image.manifest.v1+json", //asdfg BicepMediaTypes.BicepModuleSourcesArtifactType/*asdfg?*/,
+                    configasdfgDescriptor,
+                    new List<OciDescriptor> { layerasdfgDescriptor },
+                    subject: manifestDescriptor
+                    //asdfg new Dictionary<string, string> { { "asdfg3", "asfg3 value" } });
+                    );
+
+                using var manifestasdfgStream = new MemoryStream();
+                OciSerialization.Serialize(manifestasdfgStream, manifestasdfg);
+
+                manifestasdfgStream.Position = 0;
+                var manifestasdfgBinaryData = await BinaryData.FromStreamAsync(manifestasdfgStream);
+                var manifestasdfgUploadResult = await blobClient.SetManifestAsync(manifestasdfgBinaryData, null);//, mediaType: ManifestMediaType.OciImageManifest/*asdfg?*/);
+            }
         }
 
         private static Uri GetRegistryUri(OciArtifactModuleReference moduleReference) => new($"https://{moduleReference.Registry}");
