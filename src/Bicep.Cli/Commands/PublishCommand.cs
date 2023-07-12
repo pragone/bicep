@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Bicep.Cli.Arguments;
+using Bicep.Cli.Helpers;
 using Bicep.Cli.Logging;
 using Bicep.Cli.Services;
 using Bicep.Core.Configuration;
@@ -15,6 +16,7 @@ using System;
 using System.Data.Common;
 using System.IO;
 using System.IO.Abstractions;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bicep.Cli.Commands
@@ -73,10 +75,19 @@ namespace Bicep.Cli.Commands
             compilationWriter.ToStream(compilation, compiledArmTemplateStream);
             compiledArmTemplateStream.Position = 0;
 
-            var sourcesStream = new MemoryStream(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }); //asdfg
-
-            compiledArmTemplateStream.Position = 0;
-            await this.PublishModuleAsync(moduleReference, compiledArmTemplateStream, sourcesStream, documentationUri, overwriteIfExists);
+            var sourcesZipPath = PackedSourcesAsdfg.PackSources(compilation);
+            try
+            {
+                using (var sourcesStream = File.OpenRead(sourcesZipPath))
+                {
+                    compiledArmTemplateStream.Position = 0;
+                    await this.PublishModuleAsync(moduleReference, compiledArmTemplateStream, sourcesStream, documentationUri, overwriteIfExists);
+                }
+            }
+            finally
+            {
+                Directory.Delete(sourcesZipPath, recursive: true);
+            }
 
             return 0;
         }

@@ -15,6 +15,7 @@ using Azure.Identity;
 using Bicep.Core.Configuration;
 using Bicep.Core.Modules;
 using Bicep.Core.Registry.Oci;
+using Microsoft.WindowsAzure.ResourceStack.Common.Extensions;
 using OciDescriptor = Bicep.Core.Registry.Oci.OciDescriptor;
 using OciManifest = Bicep.Core.Registry.Oci.OciManifest;
 
@@ -71,10 +72,10 @@ namespace Bicep.Core.Registry
             return new OciArtifactResult(manifestDigest, manifest, manifestStream, moduleStream);
         }
 
-//asdfg https://learn.microsoft.com/en-us/dotnet/api/overview/azure/containers.containerregistry-readme?view=azure-dotnet#upload-images
-//asdfg https://learn.microsoft.com/en-us/azure/container-registry/container-registry-image-formats#oci-artifacts
-// asdfg Azure Container Registry supports the OCI Distribution Specification, a vendor-neutral, cloud-agnostic spec to store, share, secure, and deploy container images and other content types (artifacts). The specification allows a registry to store a wide range of artifacts in addition to container images. You use tooling appropriate to the artifact to push and pull artifacts. For examples, see:
-//asdfg https://github.com/oras-project/artifacts-spec/blob/main/scenarios.md
+        //asdfg https://learn.microsoft.com/en-us/dotnet/api/overview/azure/containers.containerregistry-readme?view=azure-dotnet#upload-images
+        //asdfg https://learn.microsoft.com/en-us/azure/container-registry/container-registry-image-formats#oci-artifacts
+        // asdfg Azure Container Registry supports the OCI Distribution Specification, a vendor-neutral, cloud-agnostic spec to store, share, secure, and deploy container images and other content types (artifacts). The specification allows a registry to store a wide range of artifacts in addition to container images. You use tooling appropriate to the artifact to push and pull artifacts. For examples, see:
+        //asdfg https://github.com/oras-project/artifacts-spec/blob/main/scenarios.md
 
 
         public async Task PushArtifactAsync(RootConfiguration configuration, OciArtifactModuleReference moduleReference, string? artifactType, StreamDescriptor config, Stream? bicepSources/*asdfg dono't pass this in*/, string? documentationUri = null, string? description = null, params StreamDescriptor[] layers)
@@ -89,7 +90,7 @@ namespace Bicep.Core.Registry
             var configDescriptor = DescriptorFactory.CreateDescriptor(algorithmIdentifier, config);
 
             config.ResetStream();
-            var result1 = await blobClient.UploadBlobAsync(config.Stream);
+            var result1 = await blobClient.UploadBlobAsync(config.Stream);//asdfg
 
             var layerDescriptors = new List<OciDescriptor>(layers.Length);
             foreach (var layer in layers)
@@ -99,7 +100,7 @@ namespace Bicep.Core.Registry
                 layerDescriptors.Add(layerDescriptor);
 
                 layer.ResetStream();
-                var result2 = await blobClient.UploadBlobAsync(layer.Stream);
+                var result2 = await blobClient.UploadBlobAsync(layer.Stream);//asdfg
             }
 
             var annotations = new Dictionary<string, string>();
@@ -114,7 +115,11 @@ namespace Bicep.Core.Registry
                 annotations[LanguageConstants.OciOpenContainerImageDescriptionAnnotation] = description;
             }
 
-            var manifest = new OciManifest(2, null, artifactType, configDescriptor, layerDescriptors, null);
+            // This is important to ensure any sources manifests will always point to a unique module manifest,
+            //   even if something in the sources changes that doesn't affect the compiled output.
+            annotations[LanguageConstants.OciOpenContainerImageCreatedAnnotation] = DateTime.UtcNow.ToRFC3339();
+
+            var manifest = new OciManifest(2, null, artifactType, configDescriptor, layerDescriptors, null, annotations);
 
             using var manifestStream = new MemoryStream();
             OciSerialization.Serialize(manifestStream, manifest);
@@ -129,26 +134,16 @@ namespace Bicep.Core.Registry
 
             if (bicepSources is not null)
             {
-                // asdfg do we remove current attachments?   I think yes.  If only the sources change, the old one will remain
+                // asdfg remove current attachments (only if force??)
 
-                //var config = new StreamDescriptor(Stream.Null, BicepMediaTypes.BicepModuleConfigV1); //asdfg
-
-                //asdfg??????  var configasdfg = new StreamDescriptor(Stream.Null, BicepMediaTypes.BicepModuleSourcesArtifactType/*asdfg?  mediatype of config same as artifact type of manifest?*/, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
-                //var configasdfg = new StreamDescriptor(Stream.Null, "application/vnd.oci.image.manifest.v1+json"/*asdfg?  mediatype of config same as artifact type of manifest?*/);//, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
                 // NOTE: Azure Container Registries won't recognize this as a valid attachment with this being valid JSON, so write out an empty object
                 using var innerConfigStream = new MemoryStream(new byte[] { (byte)'{', (byte)'}' });
-                var configasdfg = new StreamDescriptor(innerConfigStream, "hello/example"/*asdfg?  mediatype of config same as artifact type of manifest?*/);//, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
+                var configasdfg = new StreamDescriptor(innerConfigStream, BicepMediaTypes.BicepModuleSourcesArtifactType);//, new Dictionary<string, string> { { "asdfg1", "asdfg value" } });
                 var configasdfgDescriptor = DescriptorFactory.CreateDescriptor(algorithmIdentifier, configasdfg);
 
-                // Upload config blob     asdfg can this be skipped?
+                // Upload config blob
                 configasdfg.ResetStream();
                 var asdfgresponse1 = await blobClient.UploadBlobAsync(configasdfg.Stream); // asdfg should get digest from result
-
-
-
-                //var layer = new StreamDescriptor(bicepSources, "application/vnd.oci.image.layer.v1.tar");//, BicepMediaTypes.BicepModuleLayerV1Json);
-                //var layerasdfg = new StreamDescriptor(bicepSources, "hello/example");// "application/vnd.oci.image.manifest.v1+json"); //asdfg? BicepMediaTypes.BicepModuleSourcesV1Layer/*asdfg?*/);//asdfg, new Dictionary<string, string> { { "asdfg-title", "sourcesasdfg.zip" } });
-                //var layerasdfg = new StreamDescriptor(bicepSources, "hello/example");//, new Dictionary<string, string> { { "asdfg-title", "a.txt" } });
                 var layerasdfg = new StreamDescriptor(bicepSources, BicepMediaTypes.BicepModuleSourcesV1Layer, new Dictionary<string, string> { { "org.opencontainers.image.title", $"Sources for {moduleReference.FullyQualifiedReference}"/*asdfg*/ } });
                 layerasdfg.ResetStream();
                 var layerasdfgDescriptor = DescriptorFactory.CreateDescriptor(algorithmIdentifier, layerasdfg);
@@ -162,8 +157,8 @@ namespace Bicep.Core.Registry
                     BicepMediaTypes.BicepModuleSourcesArtifactType,
                     configasdfgDescriptor,
                     new List<OciDescriptor> { layerasdfgDescriptor },
-                    subject: manifestDescriptor // This is the reference back to the main manifest that links the source manifest to it
-                    //asdfg new Dictionary<string, string> { { "asdfg3", "asfg3 value" } });
+                    subject: manifestDescriptor, // This is the reference back to the main manifest that links the source manifest to it
+                    new Dictionary<string, string> { { LanguageConstants.OciOpenContainerImageCreatedAnnotation, DateTime.UtcNow.ToRFC3339() } }
                     );
 
                 using var manifestasdfgStream = new MemoryStream();

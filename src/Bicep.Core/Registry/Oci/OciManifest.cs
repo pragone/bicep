@@ -11,7 +11,7 @@ namespace Bicep.Core.Registry.Oci
         // asdfg added mediaType.  Needed?
         public OciManifest(int schemaVersion, string? mediaType, string? artifactType, OciDescriptor config, IEnumerable<OciDescriptor> layers, OciDescriptor? subject = null, IDictionary<string, string>? annotations = null)
         {
-            this.Annotations = annotations?.ToImmutableDictionary() ?? ImmutableDictionary<string, string>.Empty;
+            this.Annotations = (annotations?.Count > 0) ? annotations.ToImmutableDictionary() : null;
             this.SchemaVersion = schemaVersion;
             this.ArtifactType = artifactType;
             this.Config = config;
@@ -37,6 +37,6 @@ namespace Bicep.Core.Registry.Oci
         /// <summary>
         /// Additional information provided through arbitrary metadata.
         /// </summary>
-        public ImmutableDictionary<string, string> Annotations { get; }
+        public ImmutableDictionary<string, string>? Annotations { get; }
     }
 }

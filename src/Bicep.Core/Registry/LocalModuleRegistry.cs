@@ -19,7 +19,7 @@ using Bicep.Core.Workspaces;
 
 namespace Bicep.Core.Registry
 {
-    public class LocalModuleRegistry : ModuleRegistry<LocalModuleReference>
+    public class LocalModuleRegistry : ModuleRegistry<LocalModuleReference> //asdfg
     {
         private readonly IFileResolver fileResolver;
         private readonly Uri parentModuleUri;

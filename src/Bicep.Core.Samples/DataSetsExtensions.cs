@@ -190,7 +190,6 @@ namespace Bicep.Core.Samples
             {
                 await result.Template.WriteToAsync(writer);
             }
-        public OciManifest(int schemaVersion, string? mediaType, string? artifactType, OciDescriptor config, IEnumerable<OciDescriptor> layers, OciDescriptor? subject = null, IDictionary<string, string>? annotations = null)
 
             stream.Position = 0;
             await dispatcher.PublishModule(targetReference, stream, null/*asdfg*/, documentationUri);
