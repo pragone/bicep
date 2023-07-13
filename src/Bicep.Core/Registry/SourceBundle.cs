@@ -17,15 +17,15 @@ using System.Linq;
 
 namespace Bicep.Core.Registry;
 
-public class SourceBundle : IDisposable
+public class SourceBundle : IDisposable //asfdg SourceArchive?
 {
     private ZipArchive? zipArchive;
 
-        const string SourceKind_Bicep = "bicep";
-        const string SourceKind_ArmTemplate = "armTemplate";
-        const string SourceKind_TemplateSpec = "templateSpec";
-        // IF ADDING TO THIS: Remember both forwards and backwards compatibility.
-        // Previous versions must be able to deal with unrecognized source kinds.   asdfg test
+    const string SourceKind_Bicep = "bicep";
+    const string SourceKind_ArmTemplate = "armTemplate";
+    const string SourceKind_TemplateSpec = "templateSpec";
+    // IF ADDING TO THIS: Remember both forwards and backwards compatibility.
+    // Previous versions must be able to deal with unrecognized source kinds.   asdfg test
 
     ////asdfg how test forwards compat?
     //public static class SourceInfoKeys
@@ -37,10 +37,10 @@ public class SourceBundle : IDisposable
     //    //   Previous versions of Bicep must be able to ignore what is added.
     //}
 
-    public record FileMetadata( //asdfg
-        Uri Uri,
-        string LocalPath,
-        string Kind
+    public record FileMetadata(
+        Uri Uri,          // required
+        string LocalPath, // required
+        string Kind       // required
     );
 
     // asdfg test that deserializing this with unknown properties works
@@ -50,7 +50,7 @@ public class SourceBundle : IDisposable
         IEnumerable<FileMetadata> SourceFiles
     );
 
-//asdfg    private IFileSystem fileSystem;
+    //asdfg    private IFileSystem fileSystem;
     //private string localSourcesFolder; //asdfg?
 
     //asdfg private const string ZipFileName = "bicepSources.zip";
@@ -83,47 +83,87 @@ public class SourceBundle : IDisposable
     //     }
     // }
 
-    public SourceBundle(Stream stream)
+    public SourceBundle(Stream stream)  //asdfg takes ownership
     {
+        this.zipArchive = new ZipArchive(stream, ZipArchiveMode.Read);
     }
 
-    // public IEnumerable<(Uri uri, FileMetadata metadata, string contents)> GetSourceFiles()
-    // {
-    //     var metadataPath = fileSystem.Path.Join(localSourcesFolder, "metadata.json"); //asdfg constant
-    //     var metadataJson = fileSystem.File.ReadAllText(metadataPath, Encoding.UTF8);
-    //     var metadata = JsonSerializer.Deserialize<Metadata>(metadataJson);
-    //     if (metadata is null)
-    //     {
-    //         throw new ArgumentException($"Unable to deserialize metadata from {metadataPath}");
-    //     }
+    private string GetRequiredEntryContents(string relativePath)
+    {
+        if (zipArchive is null)
+        {
+            throw new ObjectDisposedException(nameof(SourceBundle));
+        }
 
-    //     // foreach (var file in metadata.SourceFiles)
-    //     // {
-    //     //     switch (file)
-    //     //     {
-    //     //         case BicepFile bicepFile:
-    //     //             source = bicepFile.ProgramSyntax.ToTextPreserveFormatting(); //asdfg?
-    //     //             break;
-    //     //         case ArmTemplateFile armTemplateFile:
-    //     //             source = armTemplateFile.Template?.ToJson() ?? "(ARM template is null)"; //asdfg testpoint
-    //     //             break;
-    //     //         case TemplateSpecFile templateSpecFile:
-    //     //             source = templateSpecFile.MainTemplateFile.Template?.ToJson() ?? "(ARM template is null)"; //asdfg testpoint
-    //     //             break;
-    //     //         default:
-    //     //             throw new ArgumentException($"Unexpected source file type {file.GetType().Name}");
-    //     //     }
+        if (zipArchive.GetEntry(relativePath) is not ZipArchiveEntry entry)
+        {
+            throw new Exception($"Could not find expected entry in archived module sources \"{relativePath}\"");
+        }
 
-    //     //     //asdfg map folder structure
-    //     //     var sourceRelativeDestinationPath = Path.GetFileName(file.FileUri.AbsolutePath); ;
-    //     //     File.WriteAllText(Path.Combine(sourcesFolder.FullName, sourceRelativeDestinationPath), source, Encoding.UTF8);
-    //     // }
+        using var entryStream = entry.Open();
+        using var sr = new StreamReader(entryStream);
+        return sr.ReadToEnd();
+    }
 
-    //     // var zipPath = Path.Combine(tempFolder.FullName, ZipFileName);
-    //     // ZipFile.CreateFromDirectory(zipSourceRoot.FullName, zipPath);
+    public Uri GetEntrypointUri()
+    {
+        return GetMetadata().EntryPoint;
+    }
 
-    //     // return new PackResult(tempFolder.FullName, zipPath);
-    // }
+    [SuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
+    private Metadata GetMetadata()
+    {
+        var metadataJson = GetRequiredEntryContents("__metadata.json"); //asdfg magic
+        var metadata = JsonSerializer.Deserialize<Metadata>(metadataJson, new JsonSerializerOptions() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+            ?? throw new ArgumentException($"Unable to deserialize metadata from {"__metadata.json"}");
+        if (metadata is null)
+        {
+            throw new ArgumentException($"Unable to deserialize metadata from {"__metadata.json"}");
+        }
+
+        return metadata;
+    }
+
+    public IEnumerable<(FileMetadata metadata, string contents)> GetSourceFiles()
+    {
+        if (zipArchive is null)
+        {
+            throw new ObjectDisposedException(nameof(SourceBundle));
+        }
+
+        var metadata = GetMetadata();
+        foreach (var entry in metadata.SourceFiles)
+        {
+            yield return (entry, GetRequiredEntryContents(entry.LocalPath));
+        }
+
+        // foreach (var file in metadata.SourceFiles)
+        // {
+        //     switch (file)
+        //     {
+        //         case BicepFile bicepFile:
+        //             source = bicepFile.ProgramSyntax.ToTextPreserveFormatting(); //asdfg?
+        //             break;
+        //         case ArmTemplateFile armTemplateFile:
+        //             source = armTemplateFile.Template?.ToJson() ?? "(ARM template is null)"; //asdfg testpoint
+        //             break;
+        //         case TemplateSpecFile templateSpecFile:
+        //             source = templateSpecFile.MainTemplateFile.Template?.ToJson() ?? "(ARM template is null)"; //asdfg testpoint
+        //             break;
+        //         default:
+        //             throw new ArgumentException($"Unexpected source file type {file.GetType().Name}");
+        //     }
+
+        //     //asdfg map folder structure
+        //     var sourceRelativeDestinationPath = Path.GetFileName(file.FileUri.AbsolutePath); ;
+        //     File.WriteAllText(Path.Combine(sourcesFolder.FullName, sourceRelativeDestinationPath), source, Encoding.UTF8);
+        // }
+
+        // var zipPath = Path.Combine(tempFolder.FullName, ZipFileName);
+        // ZipFile.CreateFromDirectory(zipSourceRoot.FullName, zipPath);
+
+        // return new PackResult(tempFolder.FullName, zipPath);
+    }
 
     public static Stream PackSources(SourceFileGrouping sourceFileGrouping)
     {
@@ -177,7 +217,7 @@ public class SourceBundle : IDisposable
             }
 
             var metadata = new Metadata(entryFileUri, filesMetadata);
-            string metadataJson = JsonSerializer.Serialize(metadata, new JsonSerializerOptions() { WriteIndented = true, PropertyNamingPolicy= JsonNamingPolicy.CamelCase });
+            string metadataJson = JsonSerializer.Serialize(metadata, new JsonSerializerOptions() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             WriteNewEntry(zipArchive, "__metadata.json", metadataJson); //asdfg no collisions
         }
 
@@ -202,7 +242,7 @@ public class SourceBundle : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if ( disposing && zipArchive is not null)
+        if (disposing && zipArchive is not null)
         {
             zipArchive.Dispose();
             zipArchive = null;
