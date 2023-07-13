@@ -4,6 +4,7 @@
 using Azure.Containers.ContainerRegistry;
 using Bicep.Core.Configuration;
 using System;
+using System.Net.Http;
 
 namespace Bicep.Core.Registry
 {
@@ -14,7 +15,9 @@ namespace Bicep.Core.Registry
     public interface IContainerRegistryClientFactory
     {
         ContainerRegistryContentClient CreateAuthenticatedBlobClient(RootConfiguration configuration, Uri registryUri, string repository);
-
         ContainerRegistryContentClient CreateAnonymousBlobClient(RootConfiguration configuration, Uri registryUri, string repository);
+
+        HttpClient CreateAuthenticatedHttpClient(RootConfiguration configuration, Uri registryUri, string repository);
+        HttpClient CreateAnonymousHttpClient(RootConfiguration configuration, Uri registryUri, string repository);
     }
 }

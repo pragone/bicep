@@ -14,6 +14,7 @@ namespace Bicep.Core.Registry
             this.Manifest = manifest;
             this.ManifestStream = manifestStream;
             this.ModuleStream = moduleStream;
+            this.SourcesStream = sourcesStream;
         }
 
         public string ManifestDigest { get; }

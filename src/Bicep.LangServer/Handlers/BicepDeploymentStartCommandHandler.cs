@@ -84,7 +84,7 @@ namespace Bicep.LanguageServer.Handlers
             options.Diagnostics.ApplySharedResourceManagerSettings();
             options.Environment = new ArmEnvironment(new Uri(request.resourceManagerEndpointUrl), request.audience);
 
-            var credential = new CredentialFromTokenAndTimeStamp(request.token, request.expiresOnTimestamp);
+            var credential = new CredentialFromTokenAndTimeStamp(request.token, request.expiresOnTimestamp);//asdfg?
             var armClient = armClientProvider.createArmClient(credential, default, options);
 
             string? parametersFileJson = null;

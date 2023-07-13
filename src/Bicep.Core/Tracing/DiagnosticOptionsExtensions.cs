@@ -39,6 +39,7 @@ namespace Bicep.Core.Tracing
         public static void ApplySharedContainerRegistrySettings(this DiagnosticsOptions options) =>
             options.ApplySharedDiagnosticsSettings(AcrClientAdditionalLoggedHeaders, AcrClientAdditionalLoggedQueryParams);
 
+        //asdfg???
         private static void ApplySharedDiagnosticsSettings(this DiagnosticsOptions options, ImmutableArray<string> additionalHeaders, ImmutableArray<string> additionalQueryParameters)
         {
             // ensure User-Agent mentions us

@@ -253,7 +253,7 @@ namespace Bicep.Core.FileSystem
         {
             if (FileExists(uri))
             {
-                fileSystem.File.Delete(uri.LocalPath);
+                fileSystem.File.Delete(uri.LocalPath); //asdfg testpoint
             }
         }
 

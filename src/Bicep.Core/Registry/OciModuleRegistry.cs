@@ -276,7 +276,7 @@ namespace Bicep.Core.Registry
             else
             {
                 this.FileResolver.DeleteFileIfExists(sourcesFile);
-            }
+             }
         }
 
         protected override string GetModuleDirectoryPath(OciArtifactModuleReference reference)

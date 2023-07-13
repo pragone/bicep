@@ -7,14 +7,23 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
 using System.Reflection.Metadata.Ecma335;
+using System.Security.Cryptography.Xml;
+using System.Text;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Containers.ContainerRegistry;
+using Azure.Core;
 using Azure.Identity;
+using Azure.ResourceManager;
 using Bicep.Core.Configuration;
 using Bicep.Core.Modules;
+using Bicep.Core.Registry.Auth;
 using Bicep.Core.Registry.Oci;
+using Bicep.Core.Tracing;
 using Microsoft.WindowsAzure.ResourceStack.Common.Extensions;
 using OciDescriptor = Bicep.Core.Registry.Oci.OciDescriptor;
 using OciManifest = Bicep.Core.Registry.Oci.OciManifest;
@@ -41,7 +50,7 @@ namespace Bicep.Core.Registry
             Stream manifestStream;
             string manifestDigest;
 
-            async Task<(ContainerRegistryContentClient, OciManifest, Stream, string)> DownloadManifestInternalAsync(bool anonymousAccess)
+            async Task<(ContainerRegistryContentClient, OciManifest, Stream, string)> DownloadManifestInternalAsync(bool anonymousAccess)//asdfg
             {
                 var client = this.CreateBlobClient(configuration, moduleReference, anonymousAccess);
                 var (manifest, manifestStream, manifestDigest) = await DownloadManifestAsync(moduleReference, client);
@@ -69,7 +78,74 @@ namespace Bicep.Core.Registry
 
             var moduleStream = await ProcessManifest(client, manifest);
 
-            var sourcesStream = (Stream?)null; //asdfg
+            Stream? sourcesStream = null;
+
+
+
+            using var httpClient = new HttpClient();
+            //UriBuilder uri = new UriBuilder(GetRegistryUri(moduleReference));
+            //https://mcr.microsoft.com/v2/bicep/app/app-configuration/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000
+            var uri = $"{GetRegistryUri(moduleReference)}/v2/{moduleReference.Repository}/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000";
+
+
+            var credential = tokenCredentialFactory.CreateChain(rootConfiguration.Cloud.CredentialPrecedence, rootConfiguration.Cloud.ActiveDirectoryAuthorityUri);
+
+            var options = new ArmClientOptions();
+            options.Diagnostics.ApplySharedResourceManagerSettings();
+            options.Environment = new ArmEnvironment(rootConfiguration.Cloud.ResourceManagerEndpointUri, rootConfiguration.Cloud.AuthenticationScope);
+
+            return new ArmClient(credential);
+
+
+
+
+            var options = new ArmClientOptions();
+            options.Diagnostics.ApplySharedResourceManagerSettings();
+            options.Environment = new ArmEnvironment(configuration.Cloud.ResourceManagerEndpointUri, configuration.Cloud.AuthenticationScope);
+            foreach (var (resourceType, apiVersion) in resourceTypeApiVersionMapping)
+            {
+                options.SetApiVersion(new ResourceType(resourceType), apiVersion);
+            }
+
+            var credential = this.credentialFactory.CreateChain(configuration.Cloud.CredentialPrecedence, configuration.Cloud.ActiveDirectoryAuthorityUri);
+
+            return new ArmClient(credential, subscriptionId, options);
+
+
+
+            //asdfg??s
+            var options = new ContainerRegistryClientOptions();
+            options.Diagnostics.ApplySharedContainerRegistrySettings();
+            options.Audience = new ContainerRegistryAudience(configuration.Cloud.ResourceManagerAudience);
+
+            //asdfg
+            var credential = this.credentialFactory.CreateChain(configuration.Cloud.CredentialPrecedence, configuration.Cloud.ActiveDirectoryAuthorityUri);
+
+
+            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
+            //((RequestUriBuilder)rawRequestUriBuilder).AppendPath("/v2/", false);
+            //((RequestUriBuilder)rawRequestUriBuilder).AppendPath(name, true);
+            //((RequestUriBuilder)rawRequestUriBuilder).AppendPath("/manifests/", false);
+            //((RequestUriBuilder)rawRequestUriBuilder).AppendPath(reference, true);
+            HttpResponseMessage response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseContentRead/*asdfg, cancellationToken*/);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Read the response content as a string
+                string responseBody = await response.Content.ReadAsStringAsync();
+
+                // Do something with the response
+                //asdfg Console.WriteLine(responseBody);
+            }
+            else
+            {
+                //asdfg Console.WriteLine($"Request failed with status code {response.StatusCode}");
+            }
+
+
+
 
             return new OciArtifactResult(manifestDigest, manifest, manifestStream, moduleStream, sourcesStream);
         }
