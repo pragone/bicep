@@ -562,5 +562,10 @@ namespace Bicep.LanguageServer.Handlers
         {
             throw new NotImplementedException();
         }
+
+        public void DeleteFileIfExists(Uri uri)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

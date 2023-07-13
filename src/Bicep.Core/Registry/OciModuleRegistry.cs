@@ -68,6 +68,7 @@ namespace Bicep.Core.Registry
         {
             /*
              * this should be kept in sync with the WriteModuleContent() implementation
+             * but beware that it's possible older versions of Bicep may be sharing this cache
              *
              * when we write content to the module cache, we attempt to get a lock so that no other writes happen in the directory
              * the code here appears to implement a lock-free read by checking existence of several files that are expected in a fully restored module
@@ -248,6 +249,7 @@ namespace Bicep.Core.Registry
         {
             /*
              * this should be kept in sync with the IsModuleRestoreRequired() implementation
+             * but beware that it's possible older versions of Bicep may be sharing this cache
              */
 
             // write main.json
@@ -266,9 +268,14 @@ namespace Bicep.Core.Registry
             this.FileResolver.Write(this.GetModuleFileUri(reference, ModuleFileType.Metadata), metadataStream);
 
             // write sources asdfg
+            var sourcesFile = this.GetModuleFileUri(reference, ModuleFileType.Sources);
             if (result.SourcesStream is Stream sourcesStream)
             {
-                //asdfg SourceBundle.UnpackSources(result.SourcesStream, this.GetModuleFileUri(reference, ModuleFileType.SourcesFolder));
+                this.FileResolver.Write(sourcesFile, result.SourcesStream);
+            }
+            else
+            {
+                this.FileResolver.DeleteFileIfExists(sourcesFile);
             }
         }
 
@@ -369,7 +376,7 @@ namespace Bicep.Core.Registry
                 ModuleFileType.Lock => "lock",
                 ModuleFileType.Manifest => "manifest",
                 ModuleFileType.Metadata => "metadata",
-                ModuleFileType.SourcesFolder => "sources",
+                ModuleFileType.Sources => "sources.zip",
                 _ => throw new NotImplementedException($"Unexpected module file type '{fileType}'.")
             };
 
@@ -382,7 +389,7 @@ namespace Bicep.Core.Registry
             Manifest,
             Lock,
             Metadata,
-            SourcesFolder,
+            Sources,
         };
     }
 }
