@@ -26,13 +26,42 @@ public class PackedSourcesAsdfg
 
     private const string ZipFileName = "bicepSources.zip";
 
+    public class PackedSources : IDisposable
+    {
+        public string ZipFilePath { get; }
+
+        private string? tempFolder;
+
+        public PackedSources(string tempFolder, string zipFilePath) {
+            this.ZipFilePath = zipFilePath;
+            this.tempFolder = tempFolder;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (tempFolder is not null && disposing)
+            {
+                Directory.Delete(this.tempFolder, recursive: true);
+                this.tempFolder = null;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+    }
+
     public PackedSourcesAsdfg(string localSourcesFolder)
     {
         this.localSourcesFolder = localSourcesFolder;
     }
 
+    
+
     [SuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
-    public static string PackSources(Compilation compilation)
+    public static PackedSources PackSources(Compilation compilation)
     {
         //asdfg how structure hierarchy of files?
         //asdfg map of locations to filenames
@@ -71,6 +100,7 @@ public class PackedSourcesAsdfg
 
         var zipPath = Path.Combine(tempFolder.FullName, ZipFileName);
         ZipFile.CreateFromDirectory(zipSourceRoot.FullName, zipPath);
-        return zipPath;
+
+        return new PackedSources(tempFolder.FullName, zipPath);
     }
 }

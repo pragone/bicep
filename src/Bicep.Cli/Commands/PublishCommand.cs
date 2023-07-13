@@ -75,19 +75,10 @@ namespace Bicep.Cli.Commands
             compilationWriter.ToStream(compilation, compiledArmTemplateStream);
             compiledArmTemplateStream.Position = 0;
 
-            var sourcesZipPath = PackedSourcesAsdfg.PackSources(compilation);
-            try
-            {
-                using (var sourcesStream = File.OpenRead(sourcesZipPath))
-                {
-                    compiledArmTemplateStream.Position = 0;
-                    await this.PublishModuleAsync(moduleReference, compiledArmTemplateStream, sourcesStream, documentationUri, overwriteIfExists);
-                }
-            }
-            finally
-            {
-                Directory.Delete(sourcesZipPath, recursive: true);
-            }
+            using var sources = PackedSourcesAsdfg.PackSources(compilation);
+            using var sourcesStream = File.OpenRead(sources.ZipFilePath);
+            compiledArmTemplateStream.Position = 0;
+            await this.PublishModuleAsync(moduleReference, compiledArmTemplateStream, sourcesStream, documentationUri, overwriteIfExists);
 
             return 0;
         }
