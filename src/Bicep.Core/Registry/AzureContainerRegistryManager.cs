@@ -69,7 +69,9 @@ namespace Bicep.Core.Registry
 
             var moduleStream = await ProcessManifest(client, manifest);
 
-            return new OciArtifactResult(manifestDigest, manifest, manifestStream, moduleStream);
+            var sourcesStream = (Stream?)null; //asdfg
+
+            return new OciArtifactResult(manifestDigest, manifest, manifestStream, moduleStream, sourcesStream);
         }
 
         //asdfg https://learn.microsoft.com/en-us/dotnet/api/overview/azure/containers.containerregistry-readme?view=azure-dotnet#upload-images

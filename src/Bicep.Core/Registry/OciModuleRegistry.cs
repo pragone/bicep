@@ -268,7 +268,7 @@ namespace Bicep.Core.Registry
             // write sources asdfg
             if (result.SourcesStream is Stream sourcesStream)
             {
-                SourcesBundle.UnpackSources(result.SourcesStream, this.GetModuleFileUri(reference, ModuleFileType.SourcesFolder));
+                //asdfg SourceBundle.UnpackSources(result.SourcesStream, this.GetModuleFileUri(reference, ModuleFileType.SourcesFolder));
             }
         }
 

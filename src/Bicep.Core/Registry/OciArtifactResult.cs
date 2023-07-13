@@ -8,7 +8,7 @@ namespace Bicep.Core.Registry
 {
     public class OciArtifactResult
     {
-        public OciArtifactResult(string manifestDigest, OciManifest manifest, Stream manifestStream, Stream moduleStream, Stream sourcesStream)
+        public OciArtifactResult(string manifestDigest, OciManifest manifest, Stream manifestStream, Stream moduleStream, Stream? sourcesStream)
         {
             this.ManifestDigest = manifestDigest;
             this.Manifest = manifest;
