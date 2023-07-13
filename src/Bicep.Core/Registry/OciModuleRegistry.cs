@@ -229,7 +229,7 @@ namespace Bicep.Core.Registry
 
             try
             {
-                await this.client.PushArtifactAsync(configuration, moduleReference, BicepMediaTypes.BicepModuleArtifactType, config,bicepSources, documentationUri, description, layer);
+                await this.client.PushArtifactAsync(configuration, moduleReference, BicepMediaTypes.BicepModuleArtifactType, config, bicepSources, documentationUri, description, layer);
             }
             catch (AggregateException exception) when (CheckAllInnerExceptionsAreRequestFailures(exception))
             {
@@ -244,7 +244,7 @@ namespace Bicep.Core.Registry
         }
 
         // Writes the contents of the downloaded module into the local cache
-        protected override void WriteModuleContent(OciArtifactModuleReference reference, OciArtifactResult result)
+        protected override void WriteModuleContentToCache(OciArtifactModuleReference reference, OciArtifactResult result)
         {
             /*
              * this should be kept in sync with the IsModuleRestoreRequired() implementation
@@ -266,6 +266,10 @@ namespace Bicep.Core.Registry
             this.FileResolver.Write(this.GetModuleFileUri(reference, ModuleFileType.Metadata), metadataStream);
 
             // write sources asdfg
+            if (result.SourcesStream is Stream sourcesStream)
+            {
+                SourcesBundle.UnpackSources(result.SourcesStream, this.GetModuleFileUri(reference, ModuleFileType.SourcesFolder));
+            }
         }
 
         protected override string GetModuleDirectoryPath(OciArtifactModuleReference reference)
@@ -317,7 +321,7 @@ namespace Bicep.Core.Registry
             {
                 var result = await this.client.PullArtifactAsync(configuration, reference);
 
-                await this.TryWriteModuleContentAsync(reference, result);
+                await this.TryWriteModuleContentToCacheAsync(reference, result);
 
                 return (result, null);
             }
@@ -365,6 +369,7 @@ namespace Bicep.Core.Registry
                 ModuleFileType.Lock => "lock",
                 ModuleFileType.Manifest => "manifest",
                 ModuleFileType.Metadata => "metadata",
+                ModuleFileType.SourcesFolder => "sources",
                 _ => throw new NotImplementedException($"Unexpected module file type '{fileType}'.")
             };
 
@@ -376,7 +381,8 @@ namespace Bicep.Core.Registry
             ModuleMain,
             Manifest,
             Lock,
-            Metadata
+            Metadata,
+            SourcesFolder,
         };
     }
 }
