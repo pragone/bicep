@@ -82,48 +82,49 @@ namespace Bicep.Core.Registry
 
 
 
-            using var httpClient = new HttpClient();
+            //using var httpClient = new HttpClient();
+            using var httpClient = await clientFactory.CreateAuthenticatedHttpClientAsync(configuration);
             //UriBuilder uri = new UriBuilder(GetRegistryUri(moduleReference));
             //https://mcr.microsoft.com/v2/bicep/app/app-configuration/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000
             var uri = $"{GetRegistryUri(moduleReference)}/v2/{moduleReference.Repository}/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000";
 
 
-            var credential = tokenCredentialFactory.CreateChain(rootConfiguration.Cloud.CredentialPrecedence, rootConfiguration.Cloud.ActiveDirectoryAuthorityUri);
+            //var credential = tokenCredentialFactory.CreateChain(rootConfiguration.Cloud.CredentialPrecedence, rootConfiguration.Cloud.ActiveDirectoryAuthorityUri);
 
-            var options = new ArmClientOptions();
-            options.Diagnostics.ApplySharedResourceManagerSettings();
-            options.Environment = new ArmEnvironment(rootConfiguration.Cloud.ResourceManagerEndpointUri, rootConfiguration.Cloud.AuthenticationScope);
+            //var options = new ArmClientOptions();
+            //options.Diagnostics.ApplySharedResourceManagerSettings();
+            //options.Environment = new ArmEnvironment(rootConfiguration.Cloud.ResourceManagerEndpointUri, rootConfiguration.Cloud.AuthenticationScope);
 
-            return new ArmClient(credential);
-
-
+            //return new ArmClient(credential);
 
 
-            var options = new ArmClientOptions();
-            options.Diagnostics.ApplySharedResourceManagerSettings();
-            options.Environment = new ArmEnvironment(configuration.Cloud.ResourceManagerEndpointUri, configuration.Cloud.AuthenticationScope);
-            foreach (var (resourceType, apiVersion) in resourceTypeApiVersionMapping)
-            {
-                options.SetApiVersion(new ResourceType(resourceType), apiVersion);
-            }
 
-            var credential = this.credentialFactory.CreateChain(configuration.Cloud.CredentialPrecedence, configuration.Cloud.ActiveDirectoryAuthorityUri);
 
-            return new ArmClient(credential, subscriptionId, options);
+            //var options = new ArmClientOptions();
+            //options.Diagnostics.ApplySharedResourceManagerSettings();
+            //options.Environment = new ArmEnvironment(configuration.Cloud.ResourceManagerEndpointUri, configuration.Cloud.AuthenticationScope);
+            //foreach (var (resourceType, apiVersion) in resourceTypeApiVersionMapping)
+            //{
+            //    options.SetApiVersion(new ResourceType(resourceType), apiVersion);
+            //}
+
+            //var credential = this.credentialFactory.CreateChain(configuration.Cloud.CredentialPrecedence, configuration.Cloud.ActiveDirectoryAuthorityUri);
+
+            //return new ArmClient(credential, subscriptionId, options);
 
 
 
             //asdfg??s
-            var options = new ContainerRegistryClientOptions();
-            options.Diagnostics.ApplySharedContainerRegistrySettings();
-            options.Audience = new ContainerRegistryAudience(configuration.Cloud.ResourceManagerAudience);
+            //var options = new ContainerRegistryClientOptions();
+            //options.Diagnostics.ApplySharedContainerRegistrySettings();
+            //options.Audience = new ContainerRegistryAudience(configuration.Cloud.ResourceManagerAudience);
 
-            //asdfg
-            var credential = this.credentialFactory.CreateChain(configuration.Cloud.CredentialPrecedence, configuration.Cloud.ActiveDirectoryAuthorityUri);
+            ////asdfg
+            //var credential = this.credentialFactory.CreateChain(configuration.Cloud.CredentialPrecedence, configuration.Cloud.ActiveDirectoryAuthorityUri);
 
 
-            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+            //string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
+            //client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
             //((RequestUriBuilder)rawRequestUriBuilder).AppendPath("/v2/", false);
             //((RequestUriBuilder)rawRequestUriBuilder).AppendPath(name, true);
