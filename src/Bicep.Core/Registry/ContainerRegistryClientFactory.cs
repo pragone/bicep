@@ -7,6 +7,7 @@ using Bicep.Core.Configuration;
 using Bicep.Core.Registry.Auth;
 using Bicep.Core.Tracing;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -44,6 +45,11 @@ namespace Bicep.Core.Registry
             return new(registryUri, repository, options);
         }
 
+        private List<string> scopes = new(new string[] {
+            "repository:storage:pull",
+            "https://sawbicep.azurecr.io/.default"
+            });
+
         public async Task<HttpClient> CreateAuthenticatedHttpClientAsync(RootConfiguration configuration)
         {
             var options = new ContainerRegistryClientOptions(); //asdfg not used
@@ -67,7 +73,7 @@ namespace Bicep.Core.Registry
 
 
             //string acrUrl = "https://sawbicep.azurecr.io";
-            string repositoryScope = /*"registry:catalog:*";*/ "repository:storage:pull";
+            //string repositoryScope = /*"registry:catalog:*";*/ "repository:storage:pull";
             //string service = "sawbicep.azurecr.io";
 
 
@@ -78,9 +84,10 @@ namespace Bicep.Core.Registry
 
 
             using var cts = new CancellationTokenSource(); //asdfg  timeout?
-            var accessToken = await credential.GetTokenAsync(new TokenRequestContext(new[] {
-                repositoryScope,
-            "sawbicep.azurecr.io/.default"}), cts.Token);//asdfg.ConfigureAwait(false);
+            var accessToken = await credential.GetTokenAsync( new TokenRequestContext( scopes.ToArray()),cts.Token);
+            //    new TokenRequestContext(new[] {
+            //    repositoryScope,
+            //"sawbicep.azurecr.io/.default"}), cts.Token);//asdfg.ConfigureAwait(false);
 
             //AccessToken token = await credential.GetTokenAsync(new (), cts.Token);
 
