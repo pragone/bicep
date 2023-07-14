@@ -37,6 +37,11 @@ namespace Bicep.Core.Registry
 {
     public class AzureContainerRegistryManager
     {
+        private record ReferrersResponse(
+            int schemaVersion,
+            string mediaType,
+            OciDescriptor[] manifests);
+
         // media types are case-insensitive (they are lowercase by convention only)
         private const StringComparison MediaTypeComparison = StringComparison.OrdinalIgnoreCase;
         private const StringComparison DigestComparison = StringComparison.Ordinal;
@@ -95,7 +100,7 @@ namespace Bicep.Core.Registry
             //var httpClient = await clientFactory.CreateAuthenticatedHttpClientAsync(configuration);
             // //UriBuilder uri = new UriBuilder(GetRegistryUri(moduleReference));
             // //https://mcr.microsoft.com/v2/bicep/app/app-configuration/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000
-            var uri = $"{GetRegistryUri(moduleReference)}/v2/{moduleReference.Repository}/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000";
+            //var uri = $"{GetRegistryUri(moduleReference)}/v2/{moduleReference.Repository}/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000";
             //var a = httpClient.GetAsync(uri);
             var r = client.Pipeline.CreateRequest();
             r.Method = new RequestMethod("GET");
@@ -104,19 +109,21 @@ namespace Bicep.Core.Registry
             request.Method = RequestMethod.Get;
             
             request.Uri.Reset(GetRegistryUri(moduleReference));
-            request.Uri.AppendPath("v2");
-            request.Uri.AppendPath(moduleReference.Registry);
-            request.Uri.AppendPath("referrers");
+            request.Uri.AppendPath("/v2/", false);
+            request.Uri.AppendPath(moduleReference.Repository, true);
+            request.Uri.AppendPath("/referrers/", false);
             request.Uri.AppendPath(manifestDigest);
 
-            request.Uri.Reset(new Uri(uri, UriKind.Absolute));
+            //request.Uri.Reset(new Uri(uri, UriKind.Absolute));
             using var cts = new CancellationTokenSource();
             var response = await client.Pipeline.SendRequestAsync(request, cts.Token);
 
-            if (response.IsSuccessStatusCode)
+            if (!response.IsError)
             {
                 // Read the response content as a string
-                string responseBody = await response.Content.ReadAsStringAsync();
+                var body = response.Content.ToObjectFromJson<ReferrersResponse>();
+                var a = body;
+                var b = a;
 
                 // Do something with the response
                 //asdfg Console.WriteLine(responseBody);
