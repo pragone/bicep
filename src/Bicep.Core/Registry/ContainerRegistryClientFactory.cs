@@ -78,7 +78,9 @@ namespace Bicep.Core.Registry
 
 
             using var cts = new CancellationTokenSource(); //asdfg  timeout?
-            var accessToken = await credential.GetTokenAsync(new TokenRequestContext(new[] { repositoryScope }), cts.Token);//asdfg.ConfigureAwait(false);
+            var accessToken = await credential.GetTokenAsync(new TokenRequestContext(new[] {
+                repositoryScope,
+            "sawbicep.azurecr.io/.default"}), cts.Token);//asdfg.ConfigureAwait(false);
 
             //AccessToken token = await credential.GetTokenAsync(new (), cts.Token);
 
