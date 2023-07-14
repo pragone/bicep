@@ -12,11 +12,13 @@ using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
 using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography.Xml;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Containers.ContainerRegistry;
 using Azure.Core;
+using Azure.Core.Pipeline;
 using Azure.Identity;
 using Azure.ResourceManager;
 using Bicep.Core.Configuration;
@@ -24,6 +26,7 @@ using Bicep.Core.Modules;
 using Bicep.Core.Registry.Auth;
 using Bicep.Core.Registry.Oci;
 using Bicep.Core.Tracing;
+using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
 using Microsoft.WindowsAzure.ResourceStack.Common.Extensions;
 using OciDescriptor = Bicep.Core.Registry.Oci.OciDescriptor;
 using OciManifest = Bicep.Core.Registry.Oci.OciManifest;
@@ -83,10 +86,26 @@ namespace Bicep.Core.Registry
 
 
             //using var httpClient = new HttpClient();
-            using var httpClient = await clientFactory.CreateAuthenticatedHttpClientAsync(configuration);
-            //UriBuilder uri = new UriBuilder(GetRegistryUri(moduleReference));
-            //https://mcr.microsoft.com/v2/bicep/app/app-configuration/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000
-            var uri = $"{GetRegistryUri(moduleReference)}/v2/{moduleReference.Repository}/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000";
+
+            //GET https://sawbicep.azurecr.io/oauth2/token?scope=repository%3Astorage%3Apull&service=sawbicep.azurecr.io HTTP/1.1
+
+
+           var httpClient= await clientFactory.CreateAuthenticatedHttpClientAsync(configuration);
+            // //UriBuilder uri = new UriBuilder(GetRegistryUri(moduleReference));
+            // //https://mcr.microsoft.com/v2/bicep/app/app-configuration/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000
+             var uri = $"{GetRegistryUri(moduleReference)}/v2/{moduleReference.Repository}/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000";
+            var a = httpClient.GetAsync(uri);
+
+            // HttpPipeline pipeline = new HttpPipeline(
+            //     new HttpClientTransport());
+            // pipeline.
+            //new TokenCredentialAuthenticationPolicy(credential, "https://management.azure.com/.default"),
+            // new HttpLoggingPolicy(),
+            // new RetryPolicy(),
+            //new BearerTokenAuthenticationPolicy(credential, "https://management.azure.com/.default"));
+
+            // // Create the ARM client with the custom HttpPipeline
+            // ArmClient armClient = new ArmClient(new DefaultAzureCredential(), pipeline);
 
 
             //var credential = tokenCredentialFactory.CreateChain(rootConfiguration.Cloud.CredentialPrecedence, rootConfiguration.Cloud.ActiveDirectoryAuthorityUri);
@@ -130,20 +149,20 @@ namespace Bicep.Core.Registry
             //((RequestUriBuilder)rawRequestUriBuilder).AppendPath(name, true);
             //((RequestUriBuilder)rawRequestUriBuilder).AppendPath("/manifests/", false);
             //((RequestUriBuilder)rawRequestUriBuilder).AppendPath(reference, true);
-            HttpResponseMessage response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseContentRead/*asdfg, cancellationToken*/);
+            //HttpResponseMessage response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseContentRead/*asdfg, cancellationToken*/);
 
-            if (response.IsSuccessStatusCode)
-            {
-                // Read the response content as a string
-                string responseBody = await response.Content.ReadAsStringAsync();
+            //if (response.IsSuccessStatusCode)
+            //{
+            //    // Read the response content as a string
+            //    string responseBody = await response.Content.ReadAsStringAsync();
 
-                // Do something with the response
-                //asdfg Console.WriteLine(responseBody);
-            }
-            else
-            {
-                //asdfg Console.WriteLine($"Request failed with status code {response.StatusCode}");
-            }
+            //    // Do something with the response
+            //    //asdfg Console.WriteLine(responseBody);
+            //}
+            //else
+            //{
+            //    //asdfg Console.WriteLine($"Request failed with status code {response.StatusCode}");
+            //}
 
 
 

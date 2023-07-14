@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Azure.Containers.ContainerRegistry;
+using Azure.ResourceManager;
 using Bicep.Core.Configuration;
 using System;
 using System.Net.Http;
@@ -18,7 +19,7 @@ namespace Bicep.Core.Registry
         ContainerRegistryContentClient CreateAuthenticatedBlobClient(RootConfiguration configuration, Uri registryUri, string repository);
         ContainerRegistryContentClient CreateAnonymousBlobClient(RootConfiguration configuration, Uri registryUri, string repository);
 
-        Task<HttpClient> CreateAuthenticatedHttpClientAsync(RootConfiguration configuration);
-        Task<HttpClient> CreateAnonymousHttpClientAsync(RootConfiguration configuration);
+        Task<HttpClient> CreateAuthenticatedHttpClientAsync(RootConfiguration configuration); //asdfg
+        //ArmClient CreateAnonymousHttpClientAsync(RootConfiguration configuration);//asdfg
     }
 }
