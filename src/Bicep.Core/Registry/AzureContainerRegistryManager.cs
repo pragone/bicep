@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -15,6 +16,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography.Xml;
 using System.Security.Policy;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure;
@@ -24,6 +26,7 @@ using Azure.Core.Pipeline;
 using Azure.Identity;
 using Azure.ResourceManager;
 using Bicep.Core.Configuration;
+using Bicep.Core.Extensions;
 using Bicep.Core.Modules;
 using Bicep.Core.Registry.Auth;
 using Bicep.Core.Registry.Oci;
@@ -38,9 +41,9 @@ namespace Bicep.Core.Registry
     public class AzureContainerRegistryManager
     {
         private record ReferrersResponse(
-            int schemaVersion,
-            string mediaType,
-            OciDescriptor[] manifests);
+            int SchemaVersion,
+            string MediaType,
+            OciDescriptor[] Manifests);
 
         // media types are case-insensitive (they are lowercase by convention only)
         private const StringComparison MediaTypeComparison = StringComparison.OrdinalIgnoreCase;
@@ -53,6 +56,7 @@ namespace Bicep.Core.Registry
             this.clientFactory = clientFactory;
         }
 
+        [SuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "Relying on references to required properties of the generic type elsewhere in the codebase.")]
         public async Task<OciArtifactResult> PullArtifactAsync(RootConfiguration configuration, OciArtifactModuleReference moduleReference)
         {
             ContainerRegistryContentClient client;
@@ -107,7 +111,7 @@ namespace Bicep.Core.Registry
             r.Content = "hi";
             var request = client.Pipeline.CreateRequest();
             request.Method = RequestMethod.Get;
-            
+
             request.Uri.Reset(GetRegistryUri(moduleReference));
             request.Uri.AppendPath("/v2/", false);
             request.Uri.AppendPath(moduleReference.Repository, true);
@@ -120,17 +124,56 @@ namespace Bicep.Core.Registry
 
             if (!response.IsError)
             {
-                // Read the response content as a string
-                var body = response.Content.ToObjectFromJson<ReferrersResponse>();
-                var a = body;
-                var b = a;
+                /* Example:
+                    {
+                      "schemaVersion": 2,
+                      "mediaType": "application/vnd.oci.image.index.v1+json",
+                      "manifests": [
+                        {
+                          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                          "digest": "sha256:210a9f9e8134fc77940ea17f971adcf8752e36b513eb7982223caa1120774284",
+                          "size": 811,
+                          "artifactType": "application/vnd.ms.bicep.module.sources"
+                        },
+                        ...
+                */
 
-                // Do something with the response
-                //asdfg Console.WriteLine(responseBody);
+                //var referrersResponse = JsonSerializer.Deserialize<ReferrersResponse>(response.Content.ToString(), new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+                JsonElement referrersResponse =  JsonSerializer.Deserialize<JsonElement>(response.Content.ToString());
+                //referrersResponse.
+                //var bicepSourcesDigests = referrersResponse?.Manifests.Where(m => m.ArtifactType == BicepMediaTypes.BicepModuleSourcesArtifactType).Select(m => m.Digest);
+                var bicepSourcesManifestDigests = referrersResponse.TryGetPropertyByPath("manifests")?.AsList().
+                    Where(m => m.GetProperty("artifactType").As<string>() == BicepMediaTypes.BicepModuleSourcesArtifactType)
+                    .Select(m => m.GetProperty("digest").As<string>());
+
+                //object? body = response.Content.ToObjectFromJson();
+                //var manifests = body.As<Dictionary<string, object>>()?["manifests"]?.AsArray();
+                //var bicepSourcesManifests = manifests?.Where(m => m.As<Dictionary<string, object>>()?["artifactType"].As<string>() == BicepMediaTypes.BicepModuleSourcesArtifactType);
+                if (bicepSourcesManifestDigests?.Count() > 1)
+                {
+                    throw new Exception("asdfg");
+                }
+                else if (bicepSourcesManifestDigests?.SingleOrDefault() is string sourcesManifestDigest)
+                {
+                    var sourcesManifest = await client.GetManifestAsync(sourcesManifestDigest, cts.Token/*asdfg*/);
+                    var sourcesBlobDigest = sourcesManifest.Value.Digest;
+                    var sourcesBlobResult = await client.DownloadBlobContentAsync(sourcesBlobDigest, cts.Token/*asdfg*/);
+                    sourcesStream = sourcesBlobResult.Value.Content.ToStream();
+                }
+
+                //if (bicepSourcesManifests?.FirstOrDefault() is object sourcesManifest ) {
+                //    if (sourcesManifest.As<Dictionary<string, object>>()?["digest"]?.As<string>() is string sourcesManifestDigest) {
+                //        var sourcesManifest = client.GetManifestAsync(sourcesManifestDigest);
+                //    }
+                //}
+
+                //var a = body;
+                //var b = a;
+
             }
             else
             {
-                //asdfg Console.WriteLine($"Request failed with status code {response.StatusCode}");
+                throw new Exception($"Request failed with status code {response.Status}");
             }
 
             // HttpPipeline pipeline = new HttpPipeline(
