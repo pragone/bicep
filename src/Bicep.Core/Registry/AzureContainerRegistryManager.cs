@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
@@ -14,6 +15,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography.Xml;
 using System.Security.Policy;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Containers.ContainerRegistry;
@@ -90,11 +92,39 @@ namespace Bicep.Core.Registry
             //GET https://sawbicep.azurecr.io/oauth2/token?scope=repository%3Astorage%3Apull&service=sawbicep.azurecr.io HTTP/1.1
 
 
-           var httpClient= await clientFactory.CreateAuthenticatedHttpClientAsync(configuration);
+            //var httpClient = await clientFactory.CreateAuthenticatedHttpClientAsync(configuration);
             // //UriBuilder uri = new UriBuilder(GetRegistryUri(moduleReference));
             // //https://mcr.microsoft.com/v2/bicep/app/app-configuration/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000
-             var uri = $"{GetRegistryUri(moduleReference)}/v2/{moduleReference.Repository}/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000";
-            var a = httpClient.GetAsync(uri);
+            var uri = $"{GetRegistryUri(moduleReference)}/v2/{moduleReference.Repository}/referrers/sha256:0000000000000000000000000000000000000000000000000000000000000000";
+            //var a = httpClient.GetAsync(uri);
+            var r = client.Pipeline.CreateRequest();
+            r.Method = new RequestMethod("GET");
+            r.Content = "hi";
+            var request = client.Pipeline.CreateRequest();
+            request.Method = RequestMethod.Get;
+            
+            request.Uri.Reset(GetRegistryUri(moduleReference));
+            request.Uri.AppendPath("v2");
+            request.Uri.AppendPath(moduleReference.Registry);
+            request.Uri.AppendPath("referrers");
+            request.Uri.AppendPath(manifestDigest);
+
+            request.Uri.Reset(new Uri(uri, UriKind.Absolute));
+            using var cts = new CancellationTokenSource();
+            var response = await client.Pipeline.SendRequestAsync(request, cts.Token);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Read the response content as a string
+                string responseBody = await response.Content.ReadAsStringAsync();
+
+                // Do something with the response
+                //asdfg Console.WriteLine(responseBody);
+            }
+            else
+            {
+                //asdfg Console.WriteLine($"Request failed with status code {response.StatusCode}");
+            }
 
             // HttpPipeline pipeline = new HttpPipeline(
             //     new HttpClientTransport());
