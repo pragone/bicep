@@ -95,7 +95,24 @@ namespace Bicep.Core.Registry
             //asdfg what do about exceptions getting sources?
             Stream? sourcesStream = null;
 
+            // asdfg cyclic dependencies?
+            // asdfg what about references to other external modules?
+            /*
+             e.g.:
+             module m1 'br/public:samples/hello-world:1.0.2' = {
+               name: 'm1'
+               params: {
+                 name: 'me myself'
+               }
+             }
+            =>
+                {
+                  "uri": "file:///Users/stephenweatherford/repos/template-examples/bicep/modules/publicRegistry/helloWorld/main.bicep",
+                  "localPath": "main.bicep",
+                  "kind": "bicep"
+                },
 
+            */
 
             //using var httpClient = new HttpClient();
 
