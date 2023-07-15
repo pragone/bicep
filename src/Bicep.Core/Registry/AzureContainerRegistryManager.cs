@@ -92,6 +92,7 @@ namespace Bicep.Core.Registry
 
             var moduleStream = await ProcessManifest(client, manifest);
 
+            //asdfg what do about exceptions getting sources?
             Stream? sourcesStream = null;
 
 
@@ -172,6 +173,7 @@ namespace Bicep.Core.Registry
                 //var bicepSourcesManifests = manifests?.Where(m => m.As<Dictionary<string, object>>()?["artifactType"].As<string>() == BicepMediaTypes.BicepModuleSourcesArtifactType);
                 if (bicepSourcesManifestDigests?.Count() > 1)
                 {
+                    // this actually hits trying to publish again unless you use --force.  Shouldn't be happening.
                     throw new Exception("asdfg");
                 }
                 else if (bicepSourcesManifestDigests?.SingleOrDefault() is string sourcesManifestDigest)
