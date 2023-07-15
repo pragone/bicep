@@ -139,12 +139,33 @@ namespace Bicep.Core.Registry
                 */
 
                 //var referrersResponse = JsonSerializer.Deserialize<ReferrersResponse>(response.Content.ToString(), new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
-                JsonElement referrersResponse =  JsonSerializer.Deserialize<JsonElement>(response.Content.ToString());
+                JsonElement referrersResponse = JsonSerializer.Deserialize<JsonElement>(response.Content.ToString());
                 //referrersResponse.
                 //var bicepSourcesDigests = referrersResponse?.Manifests.Where(m => m.ArtifactType == BicepMediaTypes.BicepModuleSourcesArtifactType).Select(m => m.Digest);
-                var bicepSourcesManifestDigests = referrersResponse.TryGetPropertyByPath("manifests")?.AsList().
-                    Where(m => m.GetProperty("artifactType").As<string>() == BicepMediaTypes.BicepModuleSourcesArtifactType)
-                    .Select(m => m.GetProperty("digest").As<string>());
+
+//                var j = @"
+//                    {
+//    ""schemaVersion"": 2,
+//    ""mediaType"": ""application/vnd.oci.image.index.v1+json"",
+//    ""manifests"": [
+//      {
+//  ""mediaType"": ""application/vnd.oci.image.manifest.v1+json"",
+//        ""digest"": ""sha256:210a9f9e8134fc77940ea17f971adcf8752e36b513eb7982223caa1120774284"",
+//        ""size"": 811,
+//        ""artifactType"": ""application/vnd.ms.bicep.module.sources""
+//      }
+//    ]
+//}
+//                ";
+//                referrersResponse = JsonSerializer.Deserialize<JsonElement>(j);
+
+                //var bicepSourcesManifestDigests = referrersResponse.TryGetPropertyByPath("manifests")?.EnumerateObject().
+                //    Where(m => m.Value.GetProperty("artifactType").As<string>() == BicepMediaTypes.BicepModuleSourcesArtifactType)
+                //    .Select(m => m.Value.GetProperty("digest").As<string>());
+
+                var bicepSourcesManifestDigests = referrersResponse.TryGetPropertyByPath("manifests")
+                    ?.EnumerateArray().Where(m => m.GetProperty("artifactType").GetString() == BicepMediaTypes.BicepModuleSourcesArtifactType)
+                    ?.Select(m => m.GetProperty("digest").GetString());
 
                 //object? body = response.Content.ToObjectFromJson();
                 //var manifests = body.As<Dictionary<string, object>>()?["manifests"]?.AsArray();
@@ -154,11 +175,16 @@ namespace Bicep.Core.Registry
                     throw new Exception("asdfg");
                 }
                 else if (bicepSourcesManifestDigests?.SingleOrDefault() is string sourcesManifestDigest)
-                {
+                {//asdfgasdfg
                     var sourcesManifest = await client.GetManifestAsync(sourcesManifestDigest, cts.Token/*asdfg*/);
-                    var sourcesBlobDigest = sourcesManifest.Value.Digest;
-                    var sourcesBlobResult = await client.DownloadBlobContentAsync(sourcesBlobDigest, cts.Token/*asdfg*/);
-                    sourcesStream = sourcesBlobResult.Value.Content.ToStream();
+                    var sourcesManifestStream = sourcesManifest.Value.Manifest.ToStream();
+                    var dm = DeserializeManifest(sourcesManifestStream);
+                    var sourceLayer = dm.Layers.FirstOrDefault(l => l.MediaType == BicepMediaTypes.BicepModuleSourcesV1Layer);
+                    if (sourceLayer?.Digest is string sourcesBlobDigest) {
+                        var sourcesBlobResult = await client.DownloadBlobContentAsync(sourcesBlobDigest, cts.Token/*asdfg*/);
+                        sourcesStream = sourcesBlobResult.Value.Content.ToStream();
+                    }
+
                 }
 
                 //if (bicepSourcesManifests?.FirstOrDefault() is object sourcesManifest ) {
