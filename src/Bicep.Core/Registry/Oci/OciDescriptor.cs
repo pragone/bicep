@@ -13,7 +13,7 @@ namespace Bicep.Core.Registry.Oci
             this.MediaType = mediaType;
             this.Digest = digest;
             this.Size = size;
-            this.Annotations = annotations?.ToImmutableDictionary() ?? ImmutableDictionary<string, string>.Empty;
+            this.Annotations = (annotations?.Count > 0) ? annotations.ToImmutableDictionary() : null;
         }
 
         public string MediaType { get; }
@@ -22,7 +22,6 @@ namespace Bicep.Core.Registry.Oci
 
         public long Size { get; }
 
-        // TODO: Skip serialization for empty annotations
-        public ImmutableDictionary<string, string> Annotations { get; }
+        public ImmutableDictionary<string, string>? Annotations { get; }
     }
 }
